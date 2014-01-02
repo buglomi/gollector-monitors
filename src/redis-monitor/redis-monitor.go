@@ -1,75 +1,14 @@
 package main
 
 import (
+	"conversions"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/vmihailenco/redis"
 	"os"
-	"regexp"
-	"strconv"
 	"strings"
 )
-
-// FIXME move this to a generic lib later
-var CONV_TABLE = map[string]func(float64) float64{
-	"K": func(f float64) float64 {
-		return f * 1024
-	},
-	"M": func(f float64) float64 {
-		return f * 1024 * 1024
-	},
-	"G": func(f float64) float64 {
-		return f * 1024 * 1024 * 1024
-	},
-	"T": func(f float64) float64 {
-		return f * 1024 * 1024 * 1024 * 1024
-	},
-	"P": func(f float64) float64 {
-		return f * 1024 * 1024 * 1024 * 1024 * 1024
-	},
-}
-
-func convertTypes(info *map[string]interface{}) {
-	for key, value := range *info {
-		strval := value.(string)
-		isnum, _ := regexp.MatchString(`\A-?\d+\z`, strval)
-
-		if isnum {
-			i, err := strconv.ParseInt(strval, 10, 64)
-
-			if err == nil {
-				(*info)[key] = i
-				continue
-			}
-		}
-
-		isfloat, _ := regexp.MatchString(`\A-?\d+\.\d+\z`, strval)
-
-		if isfloat {
-			f, err := strconv.ParseFloat(strval, 64)
-
-			if err == nil {
-				(*info)[key] = f
-				continue
-			}
-		}
-
-		is_si, _ := regexp.MatchString(`\A-?\d+(?:\.\d+)?[kKmMgGtTpP]\z`, strval)
-
-		if is_si {
-			val := strval[0 : len(strval)-1]
-			unit := strval[len(strval)-1 : len(strval)]
-
-			f, err := strconv.ParseFloat(val, 64)
-
-			if err == nil {
-				(*info)[key] = CONV_TABLE[strings.ToUpper(unit)](f)
-				continue
-			}
-		}
-	}
-}
 
 func parseInfo(info_string string) map[string]interface{} {
 	info := map[string]interface{}{}
@@ -100,7 +39,7 @@ func yield(host string, port string, password string, dbnum int) {
 
 	info := parseInfo(info_string.Val())
 
-	convertTypes(&info)
+	conversions.ConvertTypes(&info)
 	content, err := json.Marshal(info)
 
 	if err != nil {
