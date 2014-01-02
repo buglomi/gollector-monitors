@@ -64,8 +64,6 @@ func convertTypes(info *map[string]interface{}) {
 			f, err := strconv.ParseFloat(val, 64)
 
 			if err == nil {
-				fmt.Println(key, f, unit, CONV_TABLE[strings.ToUpper(unit)](f))
-
 				(*info)[key] = CONV_TABLE[strings.ToUpper(unit)](f)
 				continue
 			}
@@ -73,20 +71,10 @@ func convertTypes(info *map[string]interface{}) {
 	}
 }
 
-func main() {
+func parseInfo(info_string string) map[string]interface{} {
 	info := map[string]interface{}{}
 
-	client := redis.NewTCPClient("localhost:6379", "", int64(-1))
-	defer client.Close()
-
-	info_string := client.Info()
-
-	if info_string.Err() != nil {
-		os.Stderr.Write([]byte(info_string.Err().Error()))
-		os.Exit(1)
-	}
-
-	lines := strings.Split(info_string.Val(), "\r\n")
+	lines := strings.Split(info_string, "\r\n")
 
 	for _, line := range lines {
 		if !strings.HasPrefix(line, "#") && len(strings.Trim(line, " \t")) != 0 {
@@ -95,11 +83,30 @@ func main() {
 		}
 	}
 
+	return info
+}
+
+func main() {
+	client := redis.NewTCPClient("localhost:6379", "", int64(-1))
+	defer client.Close()
+
+	info_string := client.Info()
+
+	if info_string.Err() != nil {
+		os.Stderr.Write([]byte(info_string.Err().Error()))
+		fmt.Println("{}")
+		os.Exit(1)
+	}
+
+	info := parseInfo(info_string.Val())
+
 	convertTypes(&info)
 	content, err := json.Marshal(info)
 
 	if err != nil {
 		panic(err)
+		fmt.Println("{}")
+		os.Exit(1)
 	}
 
 	fmt.Println(string(content))
