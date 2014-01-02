@@ -93,7 +93,7 @@ func yield(host string, port string, password string, dbnum int) {
 	info_string := client.Info()
 
 	if info_string.Err() != nil {
-		os.Stderr.WriteString(info_string.Err().Error())
+		os.Stderr.WriteString(info_string.Err().Error() + "\n")
 		fmt.Println("{}")
 		os.Exit(1)
 	}
@@ -117,9 +117,10 @@ func main() {
 	port := flag.String("port", "6379", "Port of redis instance")
 	password := flag.String("password", "", "Password to connect to redis instance")
 	dbnum := flag.Int("dbnum", -1, "Database number")
+	flag.Parse()
 
 	if *host == "" || *port == "" {
-		os.Stderr.WriteString("Please enter a valid host and port")
+		os.Stderr.WriteString("Please enter a valid host and port\n")
 		fmt.Println("{}")
 		os.Exit(1)
 	}
