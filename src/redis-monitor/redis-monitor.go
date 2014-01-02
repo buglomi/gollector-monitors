@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	//"flag"
+	"flag"
 	"fmt"
 	"github.com/vmihailenco/redis"
 	"os"
@@ -86,14 +86,14 @@ func parseInfo(info_string string) map[string]interface{} {
 	return info
 }
 
-func main() {
-	client := redis.NewTCPClient("localhost:6379", "", int64(-1))
+func yield(host string, port string, password string, dbnum int) {
+	client := redis.NewTCPClient(host+":"+port, password, int64(dbnum))
 	defer client.Close()
 
 	info_string := client.Info()
 
 	if info_string.Err() != nil {
-		os.Stderr.Write([]byte(info_string.Err().Error()))
+		os.Stderr.WriteString(info_string.Err().Error())
 		fmt.Println("{}")
 		os.Exit(1)
 	}
@@ -110,4 +110,19 @@ func main() {
 	}
 
 	fmt.Println(string(content))
+}
+
+func main() {
+	host := flag.String("host", "localhost", "Hostname of redis instance")
+	port := flag.String("port", "6379", "Port of redis instance")
+	password := flag.String("password", "", "Password to connect to redis instance")
+	dbnum := flag.Int("dbnum", -1, "Database number")
+
+	if *host == "" || *port == "" {
+		os.Stderr.WriteString("Please enter a valid host and port")
+		fmt.Println("{}")
+		os.Exit(1)
+	}
+
+	yield(*host, *port, *password, *dbnum)
 }
