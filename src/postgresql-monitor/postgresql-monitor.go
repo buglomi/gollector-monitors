@@ -28,6 +28,10 @@ func (pg *PGStat) getLocks() int {
 	return pg.getCount("pg_locks")
 }
 
+func (pg *PGStat) getMaterializedViews() int {
+	return pg.getCount("pg_matviews")
+}
+
 func main() {
 	db, err := sql.Open("postgres", "user=erikh dbname=template1 sslmode=disable")
 
