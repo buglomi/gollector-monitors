@@ -5,7 +5,7 @@ import (
 )
 
 func Fatal(message string) {
-	os.Stderr.WriteString(message)
+	os.Stderr.WriteString(message + "\n")
 	os.Stdout.WriteString("null")
 	os.Exit(1)
 }
