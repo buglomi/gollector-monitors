@@ -11,9 +11,14 @@ type PGStat struct {
 	DB *sql.DB
 }
 
-type JSONOut struct {
-	MaterializedViews int `json:matviews`
-	Locks             int `json:locks`
+// this gets transformed into ints based on the count of the value.
+// kinda ugly but it's better than a bunch of funcs that do the same thing.
+var db_stats = map[string]interface{}{
+	"matviews":              "pg_matviews",
+	"locks":                 "pg_locks",
+	"cursors":               "pg_cursors",
+	"prepared_statements":   "pg_prepared_statements",
+	"prepared_transactions": "pg_prepared_xacts",
 }
 
 func (pg *PGStat) getCount(table_name string) int {
@@ -29,14 +34,6 @@ func (pg *PGStat) getCount(table_name string) int {
 	return val
 }
 
-func (pg *PGStat) getLocks() int {
-	return pg.getCount("pg_locks")
-}
-
-func (pg *PGStat) getMaterializedViews() int {
-	return pg.getCount("pg_matviews")
-}
-
 func main() {
 	db, err := sql.Open("postgres", "user=erikh dbname=template1 sslmode=disable")
 
@@ -49,12 +46,11 @@ func main() {
 
 	pg := &PGStat{DB: db}
 
-	json_out := JSONOut{
-		MaterializedViews: pg.getMaterializedViews(),
-		Locks:             pg.getLocks(),
+	for key, value := range db_stats {
+		db_stats[key] = pg.getCount(value.(string))
 	}
 
-	content, err := json.Marshal(json_out)
+	content, err := json.Marshal(db_stats)
 
 	if err != nil {
 		os.Stderr.WriteString("Error marshalling content: " + err.Error())
