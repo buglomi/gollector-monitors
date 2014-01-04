@@ -11,17 +11,21 @@ type PGStat struct {
 	DB *sql.DB
 }
 
-func (pg *PGStat) getLocks() int {
+func (pg *PGStat) getCount(table_name string) int {
 	var val int
 
-	err := pg.DB.QueryRow("select count(*) from pg_locks").Scan(&val)
+	err := pg.DB.QueryRow("select count(*) from \"" + table_name + "\"").Scan(&val)
 
 	if err != nil {
-		os.Stderr.WriteString("Error trying to query pg_locks: " + err.Error())
+		os.Stderr.WriteString("Error trying to query " + table_name + ": " + err.Error())
 		os.Exit(1)
 	}
 
 	return val
+}
+
+func (pg *PGStat) getLocks() int {
+	return pg.getCount("pg_locks")
 }
 
 func main() {
