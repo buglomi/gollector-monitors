@@ -2,9 +2,9 @@ package main
 
 import (
 	"conversions"
+	"custerr"
 	"encoding/json"
 	"flag"
-	"fmt"
 	"github.com/vmihailenco/redis"
 	"os"
 	"strings"
@@ -32,9 +32,7 @@ func yield(host string, port string, password string, dbnum int) {
 	info_string := client.Info()
 
 	if info_string.Err() != nil {
-		os.Stderr.WriteString(info_string.Err().Error() + "\n")
-		fmt.Println("{}")
-		os.Exit(1)
+		custerr.Fatal(info_string.Err().Error())
 	}
 
 	info := parseInfo(info_string.Val())
@@ -43,12 +41,10 @@ func yield(host string, port string, password string, dbnum int) {
 	content, err := json.Marshal(info)
 
 	if err != nil {
-		panic(err)
-		fmt.Println("{}")
-		os.Exit(1)
+		custerr.Fatal(err.Error())
 	}
 
-	fmt.Println(string(content))
+	os.Stdout.Write(content)
 }
 
 func main() {
@@ -59,9 +55,7 @@ func main() {
 	flag.Parse()
 
 	if *host == "" || *port == "" {
-		os.Stderr.WriteString("Please enter a valid host and port\n")
-		fmt.Println("{}")
-		os.Exit(1)
+		custerr.Fatal("Please enter a valid host and port\n")
 	}
 
 	yield(*host, *port, *password, *dbnum)
