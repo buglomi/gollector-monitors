@@ -1,6 +1,7 @@
 package main
 
 import (
+	"custerr"
 	"database/sql"
 	"encoding/json"
 	_ "github.com/bmizerany/pq"
@@ -24,11 +25,8 @@ var db_stats = map[string]interface{}{
 func (pg *PGStat) getCount(table_name string) int {
 	var val int
 
-	err := pg.DB.QueryRow("select count(*) from \"" + table_name + "\"").Scan(&val)
-
-	if err != nil {
-		os.Stderr.WriteString("Error trying to query " + table_name + ": " + err.Error())
-		os.Exit(1)
+	if err := pg.DB.QueryRow("select count(*) from \"" + table_name + "\"").Scan(&val); err != nil {
+		custerr.Fatal("Error trying to query " + table_name + ": " + err.Error())
 	}
 
 	return val
@@ -38,8 +36,7 @@ func main() {
 	db, err := sql.Open("postgres", "user=erikh dbname=template1 sslmode=disable")
 
 	if err != nil {
-		os.Stderr.WriteString("Error connecting to postgresql database: " + err.Error())
-		os.Exit(1)
+		custerr.Fatal("Error connecting to postgresql database: " + err.Error())
 	}
 
 	defer db.Close()
@@ -53,8 +50,7 @@ func main() {
 	content, err := json.Marshal(db_stats)
 
 	if err != nil {
-		os.Stderr.WriteString("Error marshalling content: " + err.Error())
-		os.Exit(1)
+		custerr.Fatal("Error marshalling content: " + err.Error())
 	}
 
 	os.Stdout.Write(content)
