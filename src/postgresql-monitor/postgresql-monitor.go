@@ -2,13 +2,18 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
+	"encoding/json"
 	_ "github.com/bmizerany/pq"
 	"os"
 )
 
 type PGStat struct {
 	DB *sql.DB
+}
+
+type JSONOut struct {
+	MaterializedViews int `json:matviews`
+	Locks             int `json:locks`
 }
 
 func (pg *PGStat) getCount(table_name string) int {
@@ -43,5 +48,19 @@ func main() {
 	defer db.Close()
 
 	pg := &PGStat{DB: db}
-	fmt.Println(pg.getLocks())
+
+	json_out := JSONOut{
+		MaterializedViews: pg.getMaterializedViews(),
+		Locks:             pg.getLocks(),
+	}
+
+	content, err := json.Marshal(json_out)
+
+	if err != nil {
+		os.Stderr.WriteString("Error marshalling content: " + err.Error())
+		os.Exit(1)
+	}
+
+	os.Stdout.Write(content)
+	os.Exit(0)
 }
