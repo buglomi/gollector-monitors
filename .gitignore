@@ -1,3 +1,4 @@
-gopath
-redis-monitor
-postgresql-monitor
+/gopath
+/redis-monitor
+/postgresql-monitor
+/icmp-monitor
