@@ -1,4 +1,4 @@
 /gopath
 /redis-monitor
 /postgresql-monitor
-/icmp-monitor
+/ping-monitor

@@ -1,3 +1,4 @@
+// ICMP routines for the ping monitor.
 package main
 
 import (
