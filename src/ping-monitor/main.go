@@ -7,10 +7,10 @@ import (
 )
 
 func main() {
-	count := flag.Int("count", 10, "The number of pings to send")
-	wait := flag.Float64("wait", 20, "The amount of time to wait for all pings to come back in seconds")
-	interval := flag.Float64("interval", 1, "The interval to wait between pings in seconds")
-	repeat := flag.Int("repeat", 60, "Repeat the whole process every x seconds")
+	count := flag.Int("count", 5, "The number of pings to send")
+	wait := flag.Float64("wait", 15, "The amount of time to wait for all pings to come back in seconds")
+	interval := flag.Float64("interval", 2, "The interval to wait between pings in seconds")
+	repeat := flag.Int("repeat", 30, "Repeat the whole process every x seconds")
 
 	flag.Parse()
 
