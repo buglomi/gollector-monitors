@@ -24,12 +24,12 @@ func NewPingMonitorWeb(s *http.Server, pi PingInfo) *PingMonitorWeb {
 
 func (pm *PingMonitorWeb) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	output := map[string]interface{}{}
-	marshal_tmp := map[string]interface{}{}
 
 	for ip, registry := range pm.PingInfo.Registries {
+		marshal_tmp := map[string]interface{}{}
 		// this seems to be the only way to do this
 		// FIXME error checking
-		content, _ := registry.(*metrics.StandardRegistry).MarshalJSON()
+		content, _ := (*registry).(*metrics.StandardRegistry).MarshalJSON()
 		json.Unmarshal(content, &marshal_tmp)
 		output[ip] = marshal_tmp
 	}

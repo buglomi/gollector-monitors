@@ -2,12 +2,9 @@
 package main
 
 import (
-	"fmt"
 	metrics "github.com/rcrowley/go-metrics"
-	"log"
 	"math"
 	"net"
-	"os"
 	"sync"
 	"time"
 )
@@ -18,7 +15,7 @@ type PingInfo struct {
 	Interval   float64
 	Repeat     int
 	Hosts      []string
-	Registries map[string]metrics.Registry
+	Registries map[string]*metrics.Registry
 }
 
 type Ping struct {
@@ -27,22 +24,22 @@ type Ping struct {
 	TrackingHash  map[uint32]uint32
 	Conn          net.Conn
 	PingInfo      PingInfo
+	Host          []byte
 }
 
 // start the ping for each ip, init metrics.
 func InitPing(pi PingInfo) {
 	for _, ip := range pi.Hosts {
-		pi.Registries[ip] = metrics.NewRegistry()
-		registry := pi.Registries[ip]
-		go metrics.Log(registry, time.Duration(pi.Repeat)*time.Second, log.New(os.Stderr, ip+": ", log.Lmicroseconds))
+		registry := metrics.NewRegistry()
+		pi.Registries[ip] = &registry
 
 		// ping each host listed -- print when complete
 		go func(ip string, registry *metrics.Registry) {
 			for {
-				pi.connectAndPing(ip, registry)
+				pi.connectAndPing(ip, pi.Registries[ip])
 				time.Sleep(time.Duration(pi.Repeat) * time.Second)
 			}
-		}(ip, &registry)
+		}(ip, pi.Registries[ip])
 	}
 }
 
@@ -54,6 +51,7 @@ func NewPing(conn net.Conn, pi PingInfo) *Ping {
 		ResultChannel: make(chan int64, pi.Count),
 		Conn:          conn,
 		PingInfo:      pi,
+		Host:          []byte(net.ParseIP(conn.RemoteAddr().String()))[12:16],
 	}
 }
 
@@ -88,9 +86,19 @@ func (ping *Ping) pingReader() {
 			}
 
 			if num == 32 { // fragmentation has not been an issue.
+				parsed_ip := true
+				for i, this_byte := range msg[12:16] {
+					if ping.Host[i] != this_byte {
+						parsed_ip = false
+						break
+					}
+				}
 
-				// strip the icmp header, although we probably *should* use this for state
-				// tracking.
+				if !parsed_ip {
+					continue
+				}
+
+				// strip the icmp header
 				msg = msg[20:]
 
 				if msg[0] != 0 {
@@ -105,12 +113,10 @@ func (ping *Ping) pingReader() {
 				// message unpack
 				ping.Mutex.RLock()
 				if (ping.TrackingHash)[key] == beCombine(msg[6], msg[7]) {
-					fmt.Println(ping.TrackingHash, key, beCombine(msg[6], msg[7]), msg, num, err)
 					ping.Mutex.RUnlock()
 					ping.Mutex.Lock()
 					delete(ping.TrackingHash, key)
 					ping.Mutex.Unlock()
-					fmt.Println(time.Now().UnixNano(), unpackTime(&msg), (time.Now().UnixNano() - unpackTime(&msg)))
 					ping.ResultChannel <- (time.Now().UnixNano() - unpackTime(&msg))
 					break
 				}
@@ -131,7 +137,6 @@ func (ping *Ping) sendPing() {
 			ping.Mutex.Lock()
 			ping.TrackingHash[res[0]] = res[1]
 			ping.Mutex.Unlock()
-			fmt.Println(ping.TrackingHash)
 			return
 		}
 	}
@@ -162,7 +167,6 @@ func (pi PingInfo) pingTimes(conn net.Conn, registry *metrics.Registry) {
 	for i := pi.Count; i != 0 && !timeout; {
 		select {
 		case result := <-ping.ResultChannel:
-			fmt.Println(result)
 			i--
 			count++
 			metrics.GetOrRegisterHistogram(
@@ -174,7 +178,7 @@ func (pi PingInfo) pingTimes(conn net.Conn, registry *metrics.Registry) {
 			timeout = true
 			break
 		default:
-			time.Sleep(1 * time.Millisecond)
+			time.Sleep(1 * time.Nanosecond)
 		}
 	}
 

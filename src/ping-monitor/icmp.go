@@ -1,10 +1,6 @@
 // ICMP routines for the ping monitor.
 package main
 
-import (
-	"fmt"
-)
-
 // make a | b in big endian form
 func beCombine(a byte, b byte) uint32 {
 	return uint32(a)<<8 | uint32(b)
@@ -16,7 +12,6 @@ func beCombine(a byte, b byte) uint32 {
 func packTime(msg *[]byte, the_time int64) {
 	for i := 0; i < 8; i++ {
 		(*msg)[i+4] = byte(the_time >> uint(i*8))
-		fmt.Println("in", (*msg)[i+4])
 	}
 }
 
@@ -25,7 +20,6 @@ func unpackTime(msg *[]byte) int64 {
 	result := int64(0)
 
 	for i := 0; i < 8; i++ {
-		fmt.Println("out", (*msg)[i+4])
 		result |= (int64((*msg)[i+4]) << uint(i*8))
 	}
 

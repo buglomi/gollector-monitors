@@ -26,7 +26,7 @@ func main() {
 		Interval:   *interval,
 		Repeat:     *repeat,
 		Hosts:      flag.Args(),
-		Registries: make(map[string]metrics.Registry),
+		Registries: make(map[string]*metrics.Registry),
 	}
 
 	InitPing(pi)
