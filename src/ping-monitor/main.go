@@ -2,22 +2,15 @@ package main
 
 import (
 	"flag"
-	metrics "github.com/rcrowley/go-metrics"
-	"log"
+	"net/http"
 	"os"
-	"time"
 )
 
-type PingInfo struct {
-	Count    int
-	Wait     float64
-	Interval float64
-}
-
 func main() {
-	count := flag.Int("count", 100, "The number of pings to send")
+	count := flag.Int("count", 10, "The number of pings to send")
 	wait := flag.Float64("wait", 20, "The amount of time to wait for all pings to come back in seconds")
 	interval := flag.Float64("interval", 1, "The interval to wait between pings in seconds")
+	repeat := flag.Int("repeat", 60, "Repeat the whole process every x seconds")
 
 	flag.Parse()
 
@@ -26,41 +19,26 @@ func main() {
 		os.Exit(1)
 	}
 
-	registries := map[string]metrics.Registry{}
-
 	pi := PingInfo{
 		Count:    *count,
 		Wait:     *wait,
 		Interval: *interval,
+		Repeat:   *repeat,
+		Hosts:    flag.Args(),
 	}
 
-	num := len(flag.Args())
-	done := make(chan bool, 100)
+	InitPing(pi)
 
-	for _, ip := range flag.Args() {
-		registries[ip] = metrics.NewRegistry()
-		registry := registries[ip]
-		go metrics.Log(registry, 1*time.Second, log.New(os.Stderr, ip+": ", log.Lmicroseconds))
-
-		for i := 0; i < 10; i++ {
-			// ping each host listed -- print when complete
-			go func(ip string, registry *metrics.Registry) {
-				pi.connectAndPing(ip, registry)
-				done <- true
-			}(ip, &registry)
-			time.Sleep(10 * time.Second)
-		}
+	s := &http.Server{
+		Addr: "127.0.0.1:9119",
 	}
 
-	num = num * 10
+	pmw := NewPingMonitorWeb(s)
 
-	// block until we're done
-	for num > 0 {
-		select {
-		case <-done:
-			num--
-		default:
-			time.Sleep(1 * time.Millisecond)
-		}
+	err := pmw.Start()
+
+	if err != nil {
+		panic(err)
+		os.Exit(1)
 	}
 }

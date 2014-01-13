@@ -2,6 +2,7 @@
 package main
 
 import (
+	"fmt"
 	metrics "github.com/rcrowley/go-metrics"
 	"math"
 	"net"
@@ -9,26 +10,34 @@ import (
 	"time"
 )
 
+type PingInfo struct {
+	Count    int
+	Wait     float64
+	Interval float64
+	Repeat   int
+	Hosts    []string
+}
+
 type Ping struct {
 	Mutex         *sync.RWMutex
 	ResultChannel chan int64
-	TrackingHash  map[uint]uint
+	TrackingHash  map[uint32]uint32
 	Conn          net.Conn
 	PingInfo      PingInfo
 }
 
 // make a | b in big endian form
-func beCombine(a byte, b byte) uint {
-	return uint(a)<<8 | uint(b)
+func beCombine(a byte, b byte) uint32 {
+	return uint32(a)<<8 | uint32(b)
 }
 
-// pack the 64-bit epoch time into the last 8 bytes (the id, sequence, and
+// pack the 64-bit epoch time into the last 8 bytes reversed (the id, sequence, and
 // message data fields respectively). This is probably not RFC friendly but it
 // gives us really accurate ping times.
 func packTime(msg *[]byte, the_time int64) {
 	for i := 0; i < 8; i++ {
-		offset := i + 4
-		(*msg)[offset] = byte(the_time >> uint(i*8))
+		(*msg)[i+4] = byte(the_time >> uint(i*8))
+		fmt.Println("in", (*msg)[i+4])
 	}
 }
 
@@ -36,9 +45,9 @@ func packTime(msg *[]byte, the_time int64) {
 func unpackTime(msg *[]byte) int64 {
 	result := int64(0)
 
-	for x := 0; x < 8; x++ {
-		offset := x + 4
-		result |= (int64((*msg)[offset]) << uint(x*8))
+	for i := 0; i < 8; i++ {
+		fmt.Println("out", (*msg)[i+4])
+		result |= (int64((*msg)[i+4]) << uint(i*8))
 	}
 
 	return result
@@ -73,39 +82,41 @@ func genChecksum(msg *[]byte) {
 
 // sends a echo request. returns the ID and sequence number in a 2 element
 // tuple.
-func doPing(conn net.Conn) []uint {
+func doPing(conn net.Conn, send_chan chan []uint32) {
 	the_time := time.Now().UnixNano()
 
 	msg := make([]byte, 12) // total echo request is 12 bytes, big endian
 	msg[0] = 8              // echo request is ICMP type 8
 
 	packTime(&msg, the_time)
+	send_chan <- []uint32{beCombine(msg[4], msg[5]), beCombine(msg[6], msg[7])}
 	genChecksum(&msg)
 
 	conn.Write(msg)
-
-	return []uint{beCombine(msg[4], msg[5]), beCombine(msg[6], msg[7])}
 }
 
 func (ping *Ping) pingReader() {
 	for i := 0; i < ping.PingInfo.Count; i++ {
 		var msg []byte
-		err_set := false
 
 		for {
-			msg = make([]byte, 32)                                     // 32 ==  20 byte icmp header + 12 byte icmp echo reply
-			ping.Conn.SetReadDeadline(time.Now().Add(2 * time.Second)) // if a ping doesn't come back in 2 seconds...
+			msg = make([]byte, 32)                                                                     // 32 ==  20 byte icmp header + 12 byte icmp echo reply
+			ping.Conn.SetReadDeadline(time.Now().Add(time.Duration(ping.PingInfo.Wait) * time.Second)) // if a ping doesn't come back in 2 seconds...
 			num, err := ping.Conn.Read(msg)
 
 			if err != nil {
-				err_set = true
-				break
+				continue
 			}
 
 			if num == 32 { // fragmentation has not been an issue.
+
 				// strip the icmp header, although we probably *should* use this for state
 				// tracking.
 				msg = msg[20:]
+
+				if msg[0] != 0 {
+					continue
+				}
 
 				// this mess just ensures this is a ping we sent. see the return values
 				// in doPing()
@@ -115,19 +126,17 @@ func (ping *Ping) pingReader() {
 				// message unpack
 				ping.Mutex.RLock()
 				if (ping.TrackingHash)[key] == beCombine(msg[6], msg[7]) {
+					fmt.Println(ping.TrackingHash, key, beCombine(msg[6], msg[7]), msg, num, err)
 					ping.Mutex.RUnlock()
 					ping.Mutex.Lock()
 					delete(ping.TrackingHash, key)
 					ping.Mutex.Unlock()
+					fmt.Println(time.Now().UnixNano(), unpackTime(&msg), (time.Now().UnixNano() - unpackTime(&msg)))
+					ping.ResultChannel <- (time.Now().UnixNano() - unpackTime(&msg))
 					break
 				}
 				ping.Mutex.RUnlock()
 			}
-		}
-
-		if !err_set {
-			// nano -> milliseconds
-			ping.ResultChannel <- (time.Now().UnixNano() - unpackTime(&msg))
 		}
 	}
 }
@@ -135,15 +144,23 @@ func (ping *Ping) pingReader() {
 // sends a single icmp echo request. fills the 'ours' map with the generated id
 // and sequence for tracking in pingReader().
 func (ping *Ping) sendPing() {
-	res := doPing(ping.Conn)
-	ping.Mutex.Lock()
-	ping.TrackingHash[res[0]] = res[1]
-	ping.Mutex.Unlock()
+	send_chan := make(chan []uint32, 100)
+	go doPing(ping.Conn, send_chan)
+	for {
+		select {
+		case res := <-send_chan:
+			ping.Mutex.Lock()
+			ping.TrackingHash[res[0]] = res[1]
+			ping.Mutex.Unlock()
+			fmt.Println(ping.TrackingHash)
+			return
+		}
+	}
 }
 
 func NewPing(conn net.Conn, pi PingInfo) *Ping {
 	return &Ping{
-		TrackingHash:  map[uint]uint{},
+		TrackingHash:  map[uint32]uint32{},
 		Mutex:         new(sync.RWMutex),
 		ResultChannel: make(chan int64, pi.Count),
 		Conn:          conn,
@@ -164,18 +181,19 @@ func (pi PingInfo) pingTimes(conn net.Conn, registry *metrics.Registry) {
 	ping := NewPing(conn, pi)
 
 	go ping.pingReader()
+	wait_for := time.After(time.Duration(pi.Wait) * time.Second)
 
 	for i := 0; i < pi.Count; i++ {
-		go ping.sendPing()
-		time.Sleep(time.Duration(pi.Interval) * time.Second)
+		ping.sendPing()
+		time.Sleep(time.Duration(ping.PingInfo.Interval) * time.Second)
 	}
 
-	wait_for := time.After(time.Duration(pi.Wait) * time.Second)
 	timeout := false
 
-	for i := pi.Count; i > 0 && !timeout; {
+	for i := pi.Count; i != 0 && !timeout; {
 		select {
 		case result := <-ping.ResultChannel:
+			fmt.Println(result)
 			i--
 			count++
 			metrics.GetOrRegisterHistogram(
@@ -191,11 +209,13 @@ func (pi PingInfo) pingTimes(conn net.Conn, registry *metrics.Registry) {
 		}
 	}
 
+	update := int64(math.Floor(float64(count) / float64(pi.Count) * 100))
+
 	metrics.GetOrRegisterHistogram(
 		"success",
 		*registry,
-		metrics.NewUniformSample(pi.Count),
-	).Update(int64(math.Floor(float64(count+1)/float64(pi.Count)) * 100))
+		metrics.NewUniformSample(10),
+	).Update(update)
 }
 
 // connect to a host and ping it. returns a tuple of float64 which contains the
