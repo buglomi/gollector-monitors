@@ -2,6 +2,8 @@
 package main
 
 import (
+	metrics "github.com/rcrowley/go-metrics"
+	"math"
 	"net"
 	"sync"
 	"time"
@@ -9,7 +11,7 @@ import (
 
 type Ping struct {
 	Mutex         *sync.RWMutex
-	ResultChannel chan *float64
+	ResultChannel chan int64
 	TrackingHash  map[uint]uint
 	Conn          net.Conn
 	PingInfo      PingInfo
@@ -125,8 +127,7 @@ func (ping *Ping) pingReader() {
 
 		if !err_set {
 			// nano -> milliseconds
-			result := float64(time.Now().UnixNano()-unpackTime(&msg)) / 1000000
-			ping.ResultChannel <- &result
+			ping.ResultChannel <- (time.Now().UnixNano() - unpackTime(&msg))
 		}
 	}
 }
@@ -144,7 +145,7 @@ func NewPing(conn net.Conn, pi PingInfo) *Ping {
 	return &Ping{
 		TrackingHash:  map[uint]uint{},
 		Mutex:         new(sync.RWMutex),
-		ResultChannel: make(chan *float64, pi.Count),
+		ResultChannel: make(chan int64, pi.Count),
 		Conn:          conn,
 		PingInfo:      pi,
 	}
@@ -157,8 +158,8 @@ func NewPing(conn net.Conn, pi PingInfo) *Ping {
 //
 // returns a tuple of float64 with at maximum num values: rtt in ms.
 //
-func (pi PingInfo) pingTimes(conn net.Conn) []float64 {
-	results := []float64{}
+func (pi PingInfo) pingTimes(conn net.Conn, registry *metrics.Registry) {
+	count := 0
 
 	ping := NewPing(conn, pi)
 
@@ -170,26 +171,37 @@ func (pi PingInfo) pingTimes(conn net.Conn) []float64 {
 	}
 
 	wait_for := time.After(time.Duration(pi.Wait) * time.Second)
+	timeout := false
 
-	for i := pi.Count; i > 0; {
+	for i := pi.Count; i > 0 && !timeout; {
 		select {
-		case <-wait_for:
-			return results
 		case result := <-ping.ResultChannel:
 			i--
-			results = append(results, *result)
+			count++
+			metrics.GetOrRegisterHistogram(
+				"ns",
+				*registry,
+				metrics.NewUniformSample(pi.Count),
+			).Update(result)
+		case <-wait_for:
+			timeout = true
+			break
 		default:
 			time.Sleep(1 * time.Millisecond)
 		}
 	}
 
-	return results
+	metrics.GetOrRegisterHistogram(
+		"success",
+		*registry,
+		metrics.NewUniformSample(pi.Count),
+	).Update(int64(math.Floor(float64(count+1)/float64(pi.Count)) * 100))
 }
 
 // connect to a host and ping it. returns a tuple of float64 which contains the
 // ping times. calculating packet loss is someone else's problem, but
 // len(retval) and count should help.
-func (pi PingInfo) connectAndPing(host string) []float64 {
+func (pi PingInfo) connectAndPing(host string, registry *metrics.Registry) {
 	conn, err := net.Dial("ip4:icmp", host)
 
 	if err != nil {
@@ -198,5 +210,5 @@ func (pi PingInfo) connectAndPing(host string) []float64 {
 
 	defer conn.Close()
 
-	return pi.pingTimes(conn)
+	pi.pingTimes(conn, registry)
 }

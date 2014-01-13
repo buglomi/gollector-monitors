@@ -2,7 +2,8 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	metrics "github.com/rcrowley/go-metrics"
+	"log"
 	"os"
 	"time"
 )
@@ -14,8 +15,8 @@ type PingInfo struct {
 }
 
 func main() {
-	count := flag.Int("count", 10, "The number of pings to send")
-	wait := flag.Float64("wait", 10, "The amount of time to wait for all pings to come back in seconds")
+	count := flag.Int("count", 100, "The number of pings to send")
+	wait := flag.Float64("wait", 20, "The amount of time to wait for all pings to come back in seconds")
 	interval := flag.Float64("interval", 1, "The interval to wait between pings in seconds")
 
 	flag.Parse()
@@ -24,6 +25,8 @@ func main() {
 		os.Stderr.WriteString("Must supply at least one IP address!\n")
 		os.Exit(1)
 	}
+
+	registries := map[string]metrics.Registry{}
 
 	pi := PingInfo{
 		Count:    *count,
@@ -35,13 +38,21 @@ func main() {
 	done := make(chan bool, 100)
 
 	for _, ip := range flag.Args() {
-		// ping each host listed -- print when complete
-		go func(ip string) {
-			result := pi.connectAndPing(ip)
-			fmt.Println(ip+":", len(result), result)
-			done <- true
-		}(ip)
+		registries[ip] = metrics.NewRegistry()
+		registry := registries[ip]
+		go metrics.Log(registry, 1*time.Second, log.New(os.Stderr, ip+": ", log.Lmicroseconds))
+
+		for i := 0; i < 10; i++ {
+			// ping each host listed -- print when complete
+			go func(ip string, registry *metrics.Registry) {
+				pi.connectAndPing(ip, registry)
+				done <- true
+			}(ip, &registry)
+			time.Sleep(10 * time.Second)
+		}
 	}
+
+	num = num * 10
 
 	// block until we're done
 	for num > 0 {

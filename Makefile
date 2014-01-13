@@ -11,6 +11,7 @@ postgresql-monitor: gopath
 	GOPATH=$(GOPATH) go build postgresql-monitor
 
 ping-monitor: gopath
+	if [ ! -d gopath/github.com/rcrowley/go-metrics ]; then /usr/bin/env GOPATH=gopath go get -u -d github.com/rcrowley/go-metrics; fi
 	GOPATH=$(GOPATH) go build ping-monitor
 
 gopath: 
