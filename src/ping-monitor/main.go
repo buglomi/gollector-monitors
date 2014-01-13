@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	metrics "github.com/rcrowley/go-metrics"
 	"net/http"
 	"os"
 )
@@ -20,11 +21,12 @@ func main() {
 	}
 
 	pi := PingInfo{
-		Count:    *count,
-		Wait:     *wait,
-		Interval: *interval,
-		Repeat:   *repeat,
-		Hosts:    flag.Args(),
+		Count:      *count,
+		Wait:       *wait,
+		Interval:   *interval,
+		Repeat:     *repeat,
+		Hosts:      flag.Args(),
+		Registries: make(map[string]metrics.Registry),
 	}
 
 	InitPing(pi)
@@ -33,7 +35,7 @@ func main() {
 		Addr: "127.0.0.1:9119",
 	}
 
-	pmw := NewPingMonitorWeb(s)
+	pmw := NewPingMonitorWeb(s, pi)
 
 	err := pmw.Start()
 

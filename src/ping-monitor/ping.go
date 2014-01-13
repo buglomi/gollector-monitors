@@ -13,11 +13,12 @@ import (
 )
 
 type PingInfo struct {
-	Count    int
-	Wait     float64
-	Interval float64
-	Repeat   int
-	Hosts    []string
+	Count      int
+	Wait       float64
+	Interval   float64
+	Repeat     int
+	Hosts      []string
+	Registries map[string]metrics.Registry
 }
 
 type Ping struct {
@@ -30,11 +31,9 @@ type Ping struct {
 
 // start the ping for each ip, init metrics.
 func InitPing(pi PingInfo) {
-	registries := map[string]metrics.Registry{}
-
 	for _, ip := range pi.Hosts {
-		registries[ip] = metrics.NewRegistry()
-		registry := registries[ip]
+		pi.Registries[ip] = metrics.NewRegistry()
+		registry := pi.Registries[ip]
 		go metrics.Log(registry, time.Duration(pi.Repeat)*time.Second, log.New(os.Stderr, ip+": ", log.Lmicroseconds))
 
 		// ping each host listed -- print when complete

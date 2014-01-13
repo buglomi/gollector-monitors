@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	metrics "github.com/rcrowley/go-metrics"
 	"net/http"
 )
 
@@ -9,10 +11,31 @@ type PingMonitorWeb struct {
 	PingInfo PingInfo
 }
 
-func NewPingMonitorWeb(s *http.Server) *PingMonitorWeb {
-	return &PingMonitorWeb{
-		Server: s,
+func NewPingMonitorWeb(s *http.Server, pi PingInfo) *PingMonitorWeb {
+	pm := &PingMonitorWeb{
+		Server:   s,
+		PingInfo: pi,
 	}
+
+	pm.Server.Handler = pm
+
+	return pm
+}
+
+func (pm *PingMonitorWeb) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	output := map[string]interface{}{}
+	marshal_tmp := map[string]interface{}{}
+
+	for ip, registry := range pm.PingInfo.Registries {
+		// this seems to be the only way to do this
+		// FIXME error checking
+		content, _ := registry.(*metrics.StandardRegistry).MarshalJSON()
+		json.Unmarshal(content, &marshal_tmp)
+		output[ip] = marshal_tmp
+	}
+
+	content, _ := json.Marshal(output)
+	w.Write(content)
 }
 
 func (pm *PingMonitorWeb) Start() error {
