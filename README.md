@@ -34,6 +34,6 @@ Golang (1.2 preferred) environment to build the software.
 
 * (C) 2014 Erik Hollensbe -- MIT Licensed
 
-## Author
+## Author(s)
 
-Erik Hollensbe <erik+github@hollensbe.org>
+* Erik Hollensbe <erik+github@hollensbe.org>
