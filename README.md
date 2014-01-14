@@ -30,7 +30,7 @@ If you want to build a specific monitor, type `make monitor-name`. If you want
 to build all monitors, just type `make`. Note that you must have a working
 Golang (1.2 preferred) environment to build the software.
 
-## Licence
+## License
 
 * (C) 2014 Erik Hollensbe -- MIT Licensed
 
