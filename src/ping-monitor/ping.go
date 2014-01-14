@@ -81,7 +81,7 @@ func (ping *Ping) pingReader() {
 			ping.Conn.SetReadDeadline(time.Now().Add(time.Duration(ping.PingInfo.Wait) * time.Second)) // if a ping doesn't come back in 2 seconds...
 			num, err := ping.Conn.Read(msg)
 
-			if err != nil {
+			if err != nil || num == 0 {
 				continue
 			}
 
@@ -166,6 +166,9 @@ func (pi PingInfo) pingTimes(conn net.Conn, registry *metrics.Registry) {
 
 	for i := pi.Count; i != 0 && !timeout; {
 		select {
+		case <-wait_for:
+			timeout = true
+			break
 		case result := <-ping.ResultChannel:
 			i--
 			count++
@@ -174,9 +177,6 @@ func (pi PingInfo) pingTimes(conn net.Conn, registry *metrics.Registry) {
 				*registry,
 				metrics.NewUniformSample(pi.Count),
 			).Update(result)
-		case <-wait_for:
-			timeout = true
-			break
 		default:
 			time.Sleep(1 * time.Nanosecond)
 		}
