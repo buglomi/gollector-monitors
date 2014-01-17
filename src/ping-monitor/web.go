@@ -29,8 +29,20 @@ func (pm *PingMonitorWeb) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		marshal_tmp := map[string]interface{}{}
 		// this seems to be the only way to do this
 		// FIXME error checking
-		content, _ := (*registry).(*metrics.StandardRegistry).MarshalJSON()
-		json.Unmarshal(content, &marshal_tmp)
+		content, err := (*registry).(*metrics.StandardRegistry).MarshalJSON()
+
+		if err != nil {
+			w.WriteHeader(500)
+			return
+		}
+
+		err = json.Unmarshal(content, &marshal_tmp)
+
+		if err != nil {
+			w.WriteHeader(500)
+			return
+		}
+
 		output[ip] = marshal_tmp
 	}
 

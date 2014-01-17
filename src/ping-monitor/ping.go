@@ -87,6 +87,7 @@ func (ping *Ping) pingReader() {
 
 			if num == 32 { // fragmentation has not been an issue.
 				parsed_ip := true
+
 				for i, this_byte := range msg[12:16] {
 					if ping.Host[i] != this_byte {
 						parsed_ip = false
