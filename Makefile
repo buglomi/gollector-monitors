@@ -1,6 +1,6 @@
 GOPATH="$(shell pwd):$(shell pwd)/gopath"
 
-all: redis-monitor postgresql-monitor ping-monitor
+all: redis-monitor postgresql-monitor ping-monitor process-monitor
 
 redis-monitor: gopath
 	if [ ! -d gopath/src/github.com/vmihailenco/redis ]; then /usr/bin/env GOPATH=gopath go get -u -d github.com/vmihailenco/redis; fi
@@ -13,6 +13,9 @@ postgresql-monitor: gopath
 ping-monitor: gopath
 	if [ ! -d gopath/github.com/rcrowley/go-metrics ]; then /usr/bin/env GOPATH=gopath go get -u -d github.com/rcrowley/go-metrics; fi
 	GOPATH=$(GOPATH) go build ping-monitor
+
+process-monitor: gopath
+	GOPATH=$(GOPATH) go build process-monitor
 
 gopath: 
 	mkdir -p gopath
