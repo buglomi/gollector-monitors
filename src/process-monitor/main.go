@@ -3,8 +3,26 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 )
+
+type PMHandler struct {
+	Binaries []string
+}
+
+func (p *PMHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	content, err := json.Marshal(GetPids(p.Binaries...))
+
+	if err != nil {
+		w.Write([]byte("null"))
+		return
+	}
+
+	w.Write(content)
+}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -12,7 +30,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	content, _ := json.Marshal(GetPids(os.Args[1:]...))
+	s := &http.Server{
+		Addr: ":9118",
+		Handler: &PMHandler{
+			Binaries: os.Args[1:],
+		},
+	}
 
-	fmt.Println(string(content))
+	err := s.ListenAndServe()
+
+	if err != nil {
+		os.Exit(1)
+	}
+
+	os.Exit(0)
 }
