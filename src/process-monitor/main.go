@@ -58,6 +58,7 @@ func GetPids(processes ...string) map[string]map[string]uint {
 				if results[process] == nil {
 					results[process] = make(map[string]uint)
 				}
+
 				results[process]["count"]++
 				nms, _ := dir.Readdirnames(0)
 				results[process]["fds"] += uint(len(nms))
