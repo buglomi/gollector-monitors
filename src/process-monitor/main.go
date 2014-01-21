@@ -31,7 +31,7 @@ func main() {
 	}
 
 	s := &http.Server{
-		Addr: ":9118",
+		Addr: "127.0.0.1:9118",
 		Handler: &PMHandler{
 			Binaries: os.Args[1:],
 		},
