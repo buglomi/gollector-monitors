@@ -2,3 +2,4 @@
 /redis-monitor
 /postgresql-monitor
 /ping-monitor
+/process-monitor
