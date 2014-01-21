@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func GetPids(processes ...string) map[string]map[string]uint {
@@ -60,7 +61,24 @@ func GetPids(processes ...string) map[string]map[string]uint {
 
 				results[process]["count"]++
 				nms, _ := dir.Readdirnames(0)
+
 				results[process]["fds"] += uint(len(nms))
+
+				for _, fd := range nms {
+					res, err := os.Readlink("/proc/" + pid + "/fd/" + fd)
+
+					if err != nil {
+						continue
+					}
+
+					if strings.HasPrefix(res, "socket:") {
+						results[process]["sockets"]++
+					}
+
+					if strings.HasPrefix(res, "pipe:") {
+						results[process]["pipes"]++
+					}
+				}
 			}
 		}
 	}
