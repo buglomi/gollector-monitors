@@ -3,4 +3,5 @@
 /postgresql-monitor
 /ping-monitor
 /process-monitor
+/tcp-monitor
 /gollector-monitors.tar.gz
