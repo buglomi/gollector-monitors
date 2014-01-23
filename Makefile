@@ -1,3 +1,9 @@
+PACKAGES=\
+				 github.com/vmihailenco/redis\
+				 github.com/bmizerany/pq\
+				 github.com/rcrowley/go-metrics
+
+
 MONITORS=\
 				 redis-monitor\
 				 postgresql-monitor\
@@ -12,24 +18,30 @@ all: $(MONITORS)
 dist: all
 	tar czf gollector-monitors.tar.gz $(MONITORS)
 
-redis-monitor: gopath
-	if [ ! -d gopath/src/github.com/vmihailenco/redis ]; then /usr/bin/env GOPATH=gopath go get -u -d github.com/vmihailenco/redis; fi
-	GOPATH=$(GOPATH) go build redis-monitor
+redis-monitor: goget
+	PATH=$(PATH):gopath/bin GOPATH=$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd) godep go build redis-monitor
 
-postgresql-monitor: gopath
-	if [ ! -d gopath/src/github.com/bmizerany/pq ]; then /usr/bin/env GOPATH=gopath go get -u -d github.com/bmizerany/pq; fi
-	GOPATH=$(GOPATH) go build postgresql-monitor
+postgresql-monitor: goget
+	PATH=$(PATH):gopath/bin GOPATH=$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd) godep go build postgresql-monitor
 
-ping-monitor: gopath
-	if [ ! -d gopath/github.com/rcrowley/go-metrics ]; then /usr/bin/env GOPATH=gopath go get -u -d github.com/rcrowley/go-metrics; fi
-	GOPATH=$(GOPATH) go build ping-monitor
+ping-monitor: goget 
+	PATH=$(PATH):gopath/bin GOPATH=$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd) godep go build ping-monitor
 
-process-monitor: gopath
-	GOPATH=$(GOPATH) go build process-monitor
+process-monitor: goget
+	PATH=$(PATH):gopath/bin GOPATH=$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd) godep go build process-monitor
 
-tcp-monitor: gopath
-	if [ ! -d gopath/github.com/rcrowley/go-metrics ]; then /usr/bin/env GOPATH=gopath go get -u -d github.com/rcrowley/go-metrics; fi
-	GOPATH=$(GOPATH) go build tcp-monitor
+tcp-monitor: goget
+	PATH=$(PATH):gopath/bin GOPATH=$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd) godep go build tcp-monitor
+
+goget: godep gopath
+	PATH=$(PATH):gopath/bin GOPATH=$(shell pwd)/gopath:$(shell pwd) godep get $(PACKAGES)
+
+godepsave: 
+	PATH=$(PATH):gopath/bin GOPATH=$(shell pwd)/gopath:$(shell pwd) godep save $(PACKAGES)
+
+godep: gopath
+	if [ ! -x gopath/bin/godep ]; then /usr/bin/env GOPATH=gopath go get -u -d github.com/kr/godep; fi
+	GOPATH=$(shell pwd):$(shell pwd)/gopath go install github.com/kr/godep
 
 gopath: 
 	mkdir -p gopath

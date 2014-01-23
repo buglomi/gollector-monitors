@@ -1,0 +1,15 @@
+{
+	"ImportPath": "_/home/erikh/repos/mine/gollector-monitors",
+	"GoVersion": "go1.2",
+	"Packages": [
+		"github.com/vmihailenco/redis",
+		"github.com/bmizerany/pq",
+		"github.com/rcrowley/go-metrics"
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/vmihailenco/bufio",
+			"Rev": "5a6706bb583bf168d886202cb376c877e9c85521"
+		}
+	]
+}
