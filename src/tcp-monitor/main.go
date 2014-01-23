@@ -46,7 +46,7 @@ func (a *Addr) ping() {
 	metrics.GetOrRegisterHistogram(
 		"errors",
 		*a.Registry,
-		metrics.NewUniformSample(10),
+		metrics.NewUniformSample(60),
 	).Update(errors)
 }
 
