@@ -28,6 +28,7 @@ process-monitor: gopath
 	GOPATH=$(GOPATH) go build process-monitor
 
 tcp-monitor: gopath
+	if [ ! -d gopath/github.com/rcrowley/go-metrics ]; then /usr/bin/env GOPATH=gopath go get -u -d github.com/rcrowley/go-metrics; fi
 	GOPATH=$(GOPATH) go build tcp-monitor
 
 gopath: 
