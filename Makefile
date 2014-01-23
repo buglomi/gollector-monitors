@@ -1,9 +1,16 @@
+MONITORS=\
+				 redis-monitor\
+				 postgresql-monitor\
+				 ping-monitor\
+				 process-monitor\
+				 tcp-monitor
+
 GOPATH="$(shell pwd):$(shell pwd)/gopath"
 
-all: redis-monitor postgresql-monitor ping-monitor process-monitor
+all: $(MONITORS)
 
 dist: all
-	tar czf gollector-monitors.tar.gz redis-monitor postgresql-monitor ping-monitor process-monitor
+	tar czf gollector-monitors.tar.gz $(MONITORS)
 
 redis-monitor: gopath
 	if [ ! -d gopath/src/github.com/vmihailenco/redis ]; then /usr/bin/env GOPATH=gopath go get -u -d github.com/vmihailenco/redis; fi
@@ -19,6 +26,9 @@ ping-monitor: gopath
 
 process-monitor: gopath
 	GOPATH=$(GOPATH) go build process-monitor
+
+tcp-monitor: gopath
+	GOPATH=$(GOPATH) go build tcp-monitor
 
 gopath: 
 	mkdir -p gopath
