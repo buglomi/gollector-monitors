@@ -21,7 +21,6 @@ You've been warned.
   This monitor must be run as root.
 * `tcp-monitor`: monitors connect() RTT to your services and reports metrics.
   Listens on localhost:9117 for using with [json\_poll](https://github.com/erikh/gollector/wiki/JSON-Poll).
-  This monitor must be run as root.
 * `redis-monitor`: jsonification of the `info` redis command. For use with the
   [command](https://github.com/erikh/gollector/wiki/Command) plugin.
 * `postgresql-monitor`: reports several metrics for use with the [command](https://github.com/erikh/gollector/wiki/Command) plugin:
