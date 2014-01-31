@@ -23,7 +23,9 @@ func NewPingMonitorWeb(s *http.Server, pi *PingInfo) *PingMonitorWeb {
 }
 
 func (pm *PingMonitorWeb) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	output := map[string]interface{}{}
+	r.Body.Close()
+
+	output := map[string]map[string]interface{}{}
 
 	for ip, registry := range pm.PingInfo.Registries {
 		marshal_tmp := map[string]interface{}{}

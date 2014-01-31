@@ -113,15 +113,15 @@ func (ping *Ping) pingReader() {
 				// if we have something, nuke it from the tracking map and bail for
 				// message unpack
 				ping.Mutex.RLock()
-				if (ping.TrackingHash)[key] == beCombine(msg[6], msg[7]) {
+				if ping.TrackingHash[key] == beCombine(msg[6], msg[7]) {
 					ping.Mutex.RUnlock()
 					ping.Mutex.Lock()
 					delete(ping.TrackingHash, key)
 					ping.Mutex.Unlock()
 					ping.ResultChannel <- (time.Now().UnixNano() - unpackTime(&msg))
-					break
+				} else {
+					ping.Mutex.RUnlock()
 				}
-				ping.Mutex.RUnlock()
 			}
 		}
 	}
@@ -159,7 +159,7 @@ func (pi *PingInfo) pingTimes(conn net.Conn, registry *metrics.Registry) {
 	wait_for := time.After(time.Duration(pi.Wait) * time.Second)
 
 	for i := 0; i < pi.Count; i++ {
-		ping.sendPing()
+		go ping.sendPing()
 		time.Sleep(time.Duration(ping.PingInfo.Interval) * time.Second)
 	}
 
