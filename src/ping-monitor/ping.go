@@ -82,7 +82,7 @@ func (ping *Ping) pingReader() {
 			num, err := ping.Conn.Read(msg)
 
 			if err != nil || num == 0 {
-				continue
+				break // give up, we'll spin if we don't.
 			}
 
 			if num == 32 { // fragmentation has not been an issue.
