@@ -41,6 +41,5 @@ func main() {
 
 	if err != nil {
 		panic(err)
-		os.Exit(1)
 	}
 }
