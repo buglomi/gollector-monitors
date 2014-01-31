@@ -20,7 +20,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	pi := PingInfo{
+	pi := &PingInfo{
 		Count:      *count,
 		Wait:       *wait,
 		Interval:   *interval,

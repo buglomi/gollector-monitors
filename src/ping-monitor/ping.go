@@ -23,12 +23,12 @@ type Ping struct {
 	ResultChannel chan int64
 	TrackingHash  map[uint32]uint32
 	Conn          net.Conn
-	PingInfo      PingInfo
+	PingInfo      *PingInfo
 	Host          []byte
 }
 
 // start the ping for each ip, init metrics.
-func InitPing(pi PingInfo) {
+func InitPing(pi *PingInfo) {
 	for _, ip := range pi.Hosts {
 		registry := metrics.NewRegistry()
 		pi.Registries[ip] = &registry
@@ -36,7 +36,7 @@ func InitPing(pi PingInfo) {
 		// ping each host listed -- print when complete
 		go func(ip string, registry *metrics.Registry) {
 			for {
-				pi.connectAndPing(ip, pi.Registries[ip])
+				pi.connectAndPing(ip, registry)
 				time.Sleep(time.Duration(pi.Repeat) * time.Second)
 			}
 		}(ip, pi.Registries[ip])
@@ -44,7 +44,7 @@ func InitPing(pi PingInfo) {
 }
 
 // init a ping object.
-func NewPing(conn net.Conn, pi PingInfo) *Ping {
+func NewPing(conn net.Conn, pi *PingInfo) *Ping {
 	return &Ping{
 		TrackingHash:  map[uint32]uint32{},
 		Mutex:         new(sync.RWMutex),
@@ -150,7 +150,7 @@ func (ping *Ping) sendPing() {
 //
 // returns a tuple of float64 with at maximum num values: rtt in ms.
 //
-func (pi PingInfo) pingTimes(conn net.Conn, registry *metrics.Registry) {
+func (pi *PingInfo) pingTimes(conn net.Conn, registry *metrics.Registry) {
 	count := 0
 
 	ping := NewPing(conn, pi)
@@ -188,14 +188,14 @@ func (pi PingInfo) pingTimes(conn net.Conn, registry *metrics.Registry) {
 	metrics.GetOrRegisterHistogram(
 		"success",
 		*registry,
-		metrics.NewUniformSample(10),
+		metrics.NewUniformSample(pi.Count),
 	).Update(update)
 }
 
 // connect to a host and ping it. returns a tuple of float64 which contains the
 // ping times. calculating packet loss is someone else's problem, but
 // len(retval) and count should help.
-func (pi PingInfo) connectAndPing(host string, registry *metrics.Registry) {
+func (pi *PingInfo) connectAndPing(host string, registry *metrics.Registry) {
 	conn, err := net.Dial("ip4:icmp", host)
 
 	if err != nil {

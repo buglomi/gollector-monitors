@@ -8,10 +8,10 @@ import (
 
 type PingMonitorWeb struct {
 	Server   *http.Server
-	PingInfo PingInfo
+	PingInfo *PingInfo
 }
 
-func NewPingMonitorWeb(s *http.Server, pi PingInfo) *PingMonitorWeb {
+func NewPingMonitorWeb(s *http.Server, pi *PingInfo) *PingMonitorWeb {
 	pm := &PingMonitorWeb{
 		Server:   s,
 		PingInfo: pi,
