@@ -6,9 +6,15 @@ import (
 	"encoding/json"
 	"flag"
 	_ "github.com/bmizerany/pq"
-	"os"
+	"net/http"
 	"strings"
+	"util"
 )
+
+type Attrs struct {
+	Params       map[string]*string
+	IgnoreErrors bool
+}
 
 type PGStat struct {
 	DB *sql.DB
@@ -25,7 +31,7 @@ var db_params = map[string][2]string{
 
 // this gets transformed into ints based on the count of the value.
 // kinda ugly but it's better than a bunch of funcs that do the same thing.
-var db_stats = map[string]interface{}{
+var db_stats = map[string]string{
 	"matviews":              "pg_matviews",
 	"locks":                 "pg_locks",
 	"cursors":               "pg_cursors",
@@ -47,10 +53,11 @@ func (pg *PGStat) getCount(table_name string, ignore_errors bool) int {
 	return val
 }
 
-func yield(params map[string]*string, ignore_errors bool) {
+func (a *Attrs) yield() []byte {
 	auth_string := ""
+	results := map[string]int{}
 
-	for key, value := range params {
+	for key, value := range a.Params {
 		if *value != "" {
 			auth_string += key + "=" + *value + " "
 		}
@@ -67,17 +74,21 @@ func yield(params map[string]*string, ignore_errors bool) {
 	pg := &PGStat{DB: db}
 
 	for key, value := range db_stats {
-		db_stats[key] = pg.getCount(value.(string), ignore_errors)
+		results[key] = pg.getCount(value, a.IgnoreErrors)
 	}
 
-	content, err := json.Marshal(db_stats)
+	content, err := json.Marshal(results)
 
 	if err != nil {
-		custerr.Fatal("Error marshalling content: " + err.Error())
+		content, _ = json.Marshal(nil)
 	}
 
-	os.Stdout.Write(content)
-	os.Exit(0)
+	return content
+}
+
+func (a *Attrs) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	w.Write(a.yield())
 }
 
 func main() {
@@ -88,8 +99,24 @@ func main() {
 	}
 
 	ignore_errors := flag.Bool("ignore-errors", false, "Ignore processing errors while pulling stats -- nice if you don't have some relations")
+	socket := flag.String("socket", "/tmp/postgresql-monitor.sock", "Socket to serve metrics on")
 
 	flag.Parse()
 
-	yield(params, *ignore_errors)
+	s := &http.Server{
+		Handler: &Attrs{
+			Params:       params,
+			IgnoreErrors: *ignore_errors,
+		},
+	}
+
+	l, err := util.CreateSocket(*socket)
+
+	if err != nil {
+		panic(err)
+	}
+
+	if err := s.Serve(l); err != nil {
+		panic(err)
+	}
 }
