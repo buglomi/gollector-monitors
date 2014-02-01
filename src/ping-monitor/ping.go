@@ -15,7 +15,7 @@ type PingInfo struct {
 	Interval   float64
 	Repeat     int
 	Hosts      []string
-	Registries map[string]*metrics.Registry
+	Registries *map[string]*metrics.Registry
 }
 
 type Ping struct {
@@ -31,7 +31,7 @@ type Ping struct {
 func InitPing(pi *PingInfo) {
 	for _, ip := range pi.Hosts {
 		registry := metrics.NewRegistry()
-		pi.Registries[ip] = &registry
+		(*pi.Registries)[ip] = &registry
 
 		// ping each host listed -- print when complete
 		go func(ip string, registry *metrics.Registry) {
@@ -39,7 +39,7 @@ func InitPing(pi *PingInfo) {
 				pi.connectAndPing(ip, registry)
 				time.Sleep(time.Duration(pi.Repeat) * time.Second)
 			}
-		}(ip, pi.Registries[ip])
+		}(ip, (*pi.Registries)[ip])
 	}
 }
 

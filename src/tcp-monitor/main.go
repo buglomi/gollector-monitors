@@ -1,23 +1,20 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	metrics "github.com/rcrowley/go-metrics"
+	"httpmetrics"
 	"net"
-	"net/http"
 	"os"
 	"time"
 )
-
-var addrs = []*Addr{}
 
 type Addr struct {
 	Address  string
 	Registry *metrics.Registry
 }
 
-var registries = map[string]*metrics.Registry{}
+var addrs = []*Addr{}
 
 func (a *Addr) startPing() {
 	go func(a *Addr) {
@@ -50,38 +47,15 @@ func (a *Addr) ping() {
 	).Update(errors)
 }
 
-func handlerFunc(w http.ResponseWriter, r *http.Request) {
-	output := map[string]interface{}{}
-
-	for _, addr := range addrs {
-		marshal_tmp := map[string]interface{}{}
-		// this seems to be the only way to do this
-		// FIXME error checking
-		content, err := (*addr.Registry).(*metrics.StandardRegistry).MarshalJSON()
-
-		if err != nil {
-			w.WriteHeader(500)
-			return
-		}
-
-		err = json.Unmarshal(content, &marshal_tmp)
-
-		if err != nil {
-			w.WriteHeader(500)
-			return
-		}
-
-		output[addr.Address] = marshal_tmp
-	}
-
-	content, _ := json.Marshal(output)
-	w.Write(content)
-}
-
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("Please provide one or more IP:Port pairs")
 		os.Exit(1)
+	}
+
+	h := &httpmetrics.Handler{
+		Registries: make(map[string]*metrics.Registry),
+		Socket:     "/tmp/tcp-monitor.sock",
 	}
 
 	for _, addr := range os.Args[1:] {
@@ -93,8 +67,10 @@ func main() {
 
 		addrs = append(addrs, a)
 		a.startPing()
+		h.Registries[addr] = &r
 	}
 
-	http.HandleFunc("/", handlerFunc)
-	http.ListenAndServe("127.0.0.1:9117", nil)
+	if err := h.CreateServer(); err != nil {
+		panic(err)
+	}
 }
