@@ -2,11 +2,9 @@ package httpmetrics
 
 import (
 	"encoding/json"
-	"errors"
 	metrics "github.com/rcrowley/go-metrics"
-	"net"
 	"net/http"
-	"os"
+	"util"
 )
 
 type Handler struct {
@@ -43,22 +41,11 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) CreateServer() error {
 	s := http.Server{Handler: h}
 
-	c, err := net.Dial("unix", h.Socket)
-
-	if err == nil {
-		c.Close()
-		return errors.New("socket in use")
-	} else {
-		os.Remove(h.Socket)
-	}
-
-	l, err := net.Listen("unix", h.Socket)
+	l, err := util.CreateSocket(h.Socket)
 
 	if err != nil {
 		return err
 	}
-
-	os.Chmod(h.Socket, 0777)
 
 	return s.Serve(l)
 }
