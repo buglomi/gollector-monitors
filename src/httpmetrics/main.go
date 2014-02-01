@@ -58,5 +58,7 @@ func (h *Handler) CreateServer() error {
 		return err
 	}
 
+	os.Chmod(h.Socket, 0777)
+
 	return s.Serve(l)
 }
