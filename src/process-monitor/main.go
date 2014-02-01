@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"util"
 )
 
 type PMHandler struct {
@@ -31,17 +32,18 @@ func main() {
 	}
 
 	s := &http.Server{
-		Addr: "127.0.0.1:9118",
 		Handler: &PMHandler{
 			Binaries: os.Args[1:],
 		},
 	}
 
-	err := s.ListenAndServe()
+	l, err := util.CreateSocket("/tmp/process-monitor.sock")
 
 	if err != nil {
-		os.Exit(1)
+		panic(err)
 	}
 
-	os.Exit(0)
+	if err := s.Serve(l); err != nil {
+		panic(err)
+	}
 }
