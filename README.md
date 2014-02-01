@@ -12,15 +12,15 @@ You've been warned.
 
 * `ping-monitor`: monitors several hosts and reports metrics (such as median
   and 99.9th percentile) on their ICMP echo round trip time. Exposes itself on
-  `localhost:9119` for querying with the
+  `/tmp/ping-monitor.sock` for querying with the
   [json\_poll](https://github.com/erikh/gollector/wiki/JSON-Poll) gollector
   plugin. This monitor must be run as root.
 * `process-monitor`: monitors several process related statistics in
   relationship to the binary that was responsible for executing the process.
-  Listens on localhost:9118 for using with [json\_poll](https://github.com/erikh/gollector/wiki/JSON-Poll).
+  Listens on `/tmp/process-monitor.sock` for using with [json\_poll](https://github.com/erikh/gollector/wiki/JSON-Poll).
   This monitor must be run as root.
 * `tcp-monitor`: monitors connect() RTT to your services and reports metrics.
-  Listens on localhost:9117 for using with [json\_poll](https://github.com/erikh/gollector/wiki/JSON-Poll).
+  Listens on `/tmp/tcp-monitor.sock` for using with [json\_poll](https://github.com/erikh/gollector/wiki/JSON-Poll).
 * `redis-monitor`: jsonification of the `info` redis command. For use with the
   [command](https://github.com/erikh/gollector/wiki/Command) plugin.
 * `postgresql-monitor`: reports several metrics for use with the [command](https://github.com/erikh/gollector/wiki/Command) plugin:
