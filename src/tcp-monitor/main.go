@@ -55,8 +55,6 @@ func handlerFunc(w http.ResponseWriter, r *http.Request) {
 
 	for _, addr := range addrs {
 		marshal_tmp := map[string]interface{}{}
-		// this seems to be the only way to do this
-		// FIXME error checking
 		content, err := (*addr.Registry).(*metrics.StandardRegistry).MarshalJSON()
 
 		if err != nil {
@@ -96,5 +94,27 @@ func main() {
 	}
 
 	http.HandleFunc("/", handlerFunc)
-	http.ListenAndServe("127.0.0.1:9117", nil)
+
+	s := http.Server{}
+
+	c, err := net.Dial("unix", "/tmp/tcp-monitor.sock")
+
+	if err == nil {
+		c.Close()
+		panic("socket in use")
+	} else {
+		os.Remove("/tmp/tcp-monitor.sock")
+	}
+
+	l, err := net.Listen("unix", "/tmp/tcp-monitor.sock")
+
+	if err != nil {
+		panic(err)
+	}
+
+	err = s.Serve(l)
+
+	if err != nil {
+		panic(err)
+	}
 }
