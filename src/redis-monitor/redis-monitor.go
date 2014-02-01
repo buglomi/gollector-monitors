@@ -6,9 +6,17 @@ import (
 	"encoding/json"
 	"flag"
 	"github.com/vmihailenco/redis"
-	"os"
+	"net/http"
 	"strings"
+	"util"
 )
+
+type Attrs struct {
+	Host     string
+	Port     string
+	Password string
+	DBNum    int
+}
 
 func parseInfo(info_string string) map[string]interface{} {
 	info := map[string]interface{}{}
@@ -25,8 +33,8 @@ func parseInfo(info_string string) map[string]interface{} {
 	return info
 }
 
-func yield(host string, port string, password string, dbnum int) {
-	client := redis.NewTCPClient(host+":"+port, password, int64(dbnum))
+func (a *Attrs) yield() []byte {
+	client := redis.NewTCPClient(a.Host+":"+a.Port, a.Password, int64(a.DBNum))
 	defer client.Close()
 
 	info_string := client.Info()
@@ -41,10 +49,15 @@ func yield(host string, port string, password string, dbnum int) {
 	content, err := json.Marshal(info)
 
 	if err != nil {
-		custerr.Fatal(err.Error())
+		content, _ = json.Marshal(nil)
 	}
 
-	os.Stdout.Write(content)
+	return content
+}
+
+func (a *Attrs) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	w.Write(a.yield())
 }
 
 func main() {
@@ -52,11 +65,30 @@ func main() {
 	port := flag.String("port", "6379", "Port of redis instance")
 	password := flag.String("password", "", "Password to connect to redis instance")
 	dbnum := flag.Int("dbnum", -1, "Database number")
+	socket := flag.String("socket", "/tmp/redis-monitor.sock", "Socket to provide metrics over")
+
 	flag.Parse()
 
 	if *host == "" || *port == "" {
 		custerr.Fatal("Please enter a valid host and port\n")
 	}
 
-	yield(*host, *port, *password, *dbnum)
+	s := &http.Server{
+		Handler: &Attrs{
+			Host:     *host,
+			Port:     *port,
+			Password: *password,
+			DBNum:    *dbnum,
+		},
+	}
+
+	l, err := util.CreateSocket(*socket)
+
+	if err != nil {
+		panic(err)
+	}
+
+	if err := s.Serve(l); err != nil {
+		panic(err)
+	}
 }
