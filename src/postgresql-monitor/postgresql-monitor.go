@@ -66,7 +66,7 @@ func (a *Attrs) yield() []byte {
 	db, err := sql.Open("postgres", strings.Trim(auth_string, " \t"))
 
 	if err != nil {
-		custerr.Fatal("Error connecting to postgresql database: " + err.Error())
+		return []byte("null")
 	}
 
 	defer db.Close()
@@ -80,7 +80,7 @@ func (a *Attrs) yield() []byte {
 	content, err := json.Marshal(results)
 
 	if err != nil {
-		content, _ = json.Marshal(nil)
+		return []byte("null")
 	}
 
 	return content

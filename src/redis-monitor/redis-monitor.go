@@ -40,7 +40,7 @@ func (a *Attrs) yield() []byte {
 	info_string := client.Info()
 
 	if info_string.Err() != nil {
-		custerr.Fatal(info_string.Err().Error())
+		return []byte("null")
 	}
 
 	info := parseInfo(info_string.Val())
@@ -49,7 +49,7 @@ func (a *Attrs) yield() []byte {
 	content, err := json.Marshal(info)
 
 	if err != nil {
-		content, _ = json.Marshal(nil)
+		return []byte("null")
 	}
 
 	return content
