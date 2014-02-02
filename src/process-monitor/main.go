@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -26,18 +27,22 @@ func (p *PMHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	if len(os.Args) < 2 {
+	socket := flag.String("socket", "/tmp/process-monitor.sock", "Path to the socket we serve metrics over")
+
+	flag.Parse()
+
+	if len(flag.Args()) < 1 {
 		fmt.Println("enter the full path to a binary")
 		os.Exit(1)
 	}
 
 	s := &http.Server{
 		Handler: &PMHandler{
-			Binaries: os.Args[1:],
+			Binaries: flag.Args(),
 		},
 	}
 
-	l, err := util.CreateSocket("/tmp/process-monitor.sock")
+	l, err := util.CreateSocket(*socket)
 
 	if err != nil {
 		panic(err)
