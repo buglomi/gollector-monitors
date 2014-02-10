@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -14,7 +15,7 @@ import (
 	"util"
 )
 
-var registry = map[string]interface{}{}
+var registry = map[string]float64{}
 var mutex = new(sync.RWMutex)
 
 func Handler(w http.ResponseWriter, r *http.Request) {
@@ -32,8 +33,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 func populateRegistry() {
 	for {
+		mutex.Lock()
 		for key, _ := range registry {
-			mutex.Lock()
 			newkey := strings.Replace(key, ".", "/", -1)
 
 			// /proc/sys is what the manpage recommends over sysctl(2)
@@ -47,18 +48,20 @@ func populateRegistry() {
 			file.Close()
 
 			if err != nil {
+				fmt.Println(err)
 				registry[key] = 0
 			}
 
-			result, err := strconv.ParseFloat(string(content), 64)
+			result, err := strconv.ParseFloat(strings.Trim(string(content), "\n"), 64)
 
 			if err != nil {
+				fmt.Println(err)
 				registry[key] = 0
 			}
 
 			registry[key] = result
-			mutex.Unlock()
 		}
+		mutex.Unlock()
 
 		time.Sleep(60 * time.Second)
 	}
