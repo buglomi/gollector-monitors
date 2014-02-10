@@ -19,6 +19,7 @@ All monitors listen on `/tmp/<name>.sock`. Several must be run as root.
   relationship to the binary that was responsible for executing the process.
   This monitor must be run as root.
 * `tcp-monitor`: monitors connect() RTT to your services and reports metrics.
+* `sysctl-monitor`: montior running values from sysctl.
 * `redis-monitor`: jsonification of the `info` redis command.
 * `postgresql-monitor`: reports several metrics:
   * materialized views
