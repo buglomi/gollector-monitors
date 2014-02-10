@@ -9,7 +9,8 @@ MONITORS=\
 				 postgresql-monitor\
 				 ping-monitor\
 				 process-monitor\
-				 tcp-monitor
+				 tcp-monitor\
+				 sysctl-monitor
 
 GOPATH="$(shell pwd):$(shell pwd)/gopath"
 
@@ -32,6 +33,9 @@ process-monitor: goget
 
 tcp-monitor: goget
 	PATH="$(PATH):gopath/bin" GOPATH="$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd)" godep go build tcp-monitor
+
+sysctl-monitor: goget
+	PATH="$(PATH):gopath/bin" GOPATH="$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd)" godep go build sysctl-monitor
 
 goget: godep gopath
 	PATH="$(PATH):gopath/bin" GOPATH="$(shell pwd)/gopath:$(shell pwd)" godep get $(PACKAGES)

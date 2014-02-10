@@ -4,5 +4,6 @@
 /ping-monitor
 /process-monitor
 /tcp-monitor
+/sysctl-monitor
 /gollector-monitors.tar.gz
 Godeps/_workspace
