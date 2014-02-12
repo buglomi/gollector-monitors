@@ -12,12 +12,12 @@ MONITORS=\
 				 tcp-monitor\
 				 sysctl-monitor
 
-all: $(MONITORS)
+all: ${MONITORS}
 
 clean:
 	rm -rf gopath
 	rm -rf Godeps/_workspace
-	rm -f $(MONITORS)
+	rm -f ${MONITORS}
 
 rebuild: clean all
 
