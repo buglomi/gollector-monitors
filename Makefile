@@ -16,38 +16,46 @@ GOPATH="$(shell pwd):$(shell pwd)/gopath"
 
 all: $(MONITORS)
 
-dist: all
-	tar czf gollector-monitors.tar.gz $(MONITORS)
+clean:
+	rm -rf gopath
+	rm -rf Godeps/_workspace
+	rm -f $(MONITORS)
 
-redis-monitor: goget
-	PATH="$(PATH):gopath/bin" GOPATH="$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd)" godep go build redis-monitor
+rebuild: clean all
 
-postgresql-monitor: goget
-	PATH="$(PATH):gopath/bin" GOPATH="$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd)" godep go build postgresql-monitor
-
-ping-monitor: goget 
-	PATH="$(PATH):gopath/bin" GOPATH="$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd)" godep go build ping-monitor
-
-process-monitor: goget
-	PATH="$(PATH):gopath/bin" GOPATH="$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd)" godep go build process-monitor
-
-tcp-monitor: goget
-	PATH="$(PATH):gopath/bin" GOPATH="$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd)" godep go build tcp-monitor
-
-sysctl-monitor: goget
-	PATH="$(PATH):gopath/bin" GOPATH="$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd)" godep go build sysctl-monitor
-
-goget: godep gopath
-	PATH="$(PATH):gopath/bin" GOPATH="$(shell pwd)/gopath:$(shell pwd)" godep get $(PACKAGES)
-
-godepsave: 
+godepsave: gopath/bin/godep Godeps/_workspace/src
 	PATH="$(PATH):gopath/bin" GOPATH="$(shell pwd)/gopath:$(shell pwd)" godep save $(PACKAGES)
 
-godep: gopath
-	if [ ! -x gopath/bin/godep ]; then /usr/bin/env GOPATH=gopath go get -u -d github.com/kr/godep; fi
+dist: clean all
+	tar czf gollector-monitors.tar.gz $(MONITORS)
+
+redis-monitor: gopath/src/built src/redis-monitor/*.go
+	PATH="$(PATH):gopath/bin" GOPATH="$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd)" godep go build redis-monitor
+
+postgresql-monitor: gopath/src/built src/postgresql-monitor/*.go
+	PATH="$(PATH):gopath/bin" GOPATH="$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd)" godep go build postgresql-monitor
+
+ping-monitor: gopath/src/built src/ping-monitor/*.go
+	PATH="$(PATH):gopath/bin" GOPATH="$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd)" godep go build ping-monitor
+
+process-monitor: gopath/src/built src/process-monitor/*.go
+	PATH="$(PATH):gopath/bin" GOPATH="$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd)" godep go build process-monitor
+
+tcp-monitor: gopath/src/built src/tcp-monitor/*.go
+	PATH="$(PATH):gopath/bin" GOPATH="$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd)" godep go build tcp-monitor
+
+sysctl-monitor: gopath/src/built src/sysctl-monitor/*.go
+	PATH="$(PATH):gopath/bin" GOPATH="$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd)" godep go build sysctl-monitor
+
+gopath/src/built: gopath gopath/bin/godep
+	PATH="$(PATH):gopath/bin" GOPATH="$(shell pwd)/gopath:$(shell pwd)" godep get $(PACKAGES)
+	touch gopath/src/built
+
+gopath/bin/godep: gopath
+	/usr/bin/env GOPATH=gopath go get -u -d github.com/kr/godep
 	GOPATH=$(shell pwd):$(shell pwd)/gopath go install github.com/kr/godep
 
-gopath: 
+gopath:
 	mkdir -p gopath
 
-.PHONY: gopath
+.PHONY: godepsave rebuild
