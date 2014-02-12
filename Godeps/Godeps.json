@@ -9,7 +9,7 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/vmihailenco/bufio",
-			"Rev": "9bd8506288d01c5dfad4aac1ed786aae3e716986"
+			"Rev": "44bfd372871fc1dde3c2d7f40b355c8cdaf0d23e"
 		}
 	]
 }

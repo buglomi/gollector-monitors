@@ -21,7 +21,7 @@ clean:
 
 rebuild: clean all
 
-godepsave: gopath/bin/godep Godeps/_workspace/src
+godepsave: gopath/bin/godep
 	PATH="$(PATH):gopath/bin" GOPATH="${PWD}/gopath:${PWD}" godep save ${PACKAGES}
 
 dist: clean all
