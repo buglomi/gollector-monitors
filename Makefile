@@ -25,7 +25,7 @@ godepsave: gopath/bin/godep
 	PATH="$(PATH):gopath/bin" GOPATH="${PWD}/gopath:${PWD}" godep save ${PACKAGES}
 
 dist: clean all
-	tar czf gollector-monitors.tar.gz $(MONITORS)
+	tar czf gollector-monitors.tar.gz ${MONITORS}
 
 ${MONITORS}: %: gopath/src/built
 	PATH="${PATH}:gopath/bin" GOPATH="${PWD}/gopath:Godeps/_workspace:${PWD}" godep go build $*
