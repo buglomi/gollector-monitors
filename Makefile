@@ -29,23 +29,8 @@ godepsave: gopath/bin/godep Godeps/_workspace/src
 dist: clean all
 	tar czf gollector-monitors.tar.gz $(MONITORS)
 
-redis-monitor: gopath/src/built src/redis-monitor/*.go
-	PATH="$(PATH):gopath/bin" GOPATH="$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd)" godep go build redis-monitor
-
-postgresql-monitor: gopath/src/built src/postgresql-monitor/*.go
-	PATH="$(PATH):gopath/bin" GOPATH="$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd)" godep go build postgresql-monitor
-
-ping-monitor: gopath/src/built src/ping-monitor/*.go
-	PATH="$(PATH):gopath/bin" GOPATH="$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd)" godep go build ping-monitor
-
-process-monitor: gopath/src/built src/process-monitor/*.go
-	PATH="$(PATH):gopath/bin" GOPATH="$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd)" godep go build process-monitor
-
-tcp-monitor: gopath/src/built src/tcp-monitor/*.go
-	PATH="$(PATH):gopath/bin" GOPATH="$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd)" godep go build tcp-monitor
-
-sysctl-monitor: gopath/src/built src/sysctl-monitor/*.go
-	PATH="$(PATH):gopath/bin" GOPATH="$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd)" godep go build sysctl-monitor
+${MONITORS}: %: gopath/src/built
+	PATH="${PATH}:gopath/bin" GOPATH="$(shell pwd)/gopath:Godeps/_workspace:$(shell pwd)" godep go build $*
 
 gopath/src/built: gopath gopath/bin/godep
 	PATH="$(PATH):gopath/bin" GOPATH="$(shell pwd)/gopath:$(shell pwd)" godep get $(PACKAGES)
@@ -58,4 +43,4 @@ gopath/bin/godep: gopath
 gopath:
 	mkdir -p gopath
 
-.PHONY: godepsave rebuild
+.PHONY: godepsave
