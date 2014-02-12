@@ -31,7 +31,7 @@ ${MONITORS}: %: gopath/src/built
 	PATH="${PATH}:gopath/bin" GOPATH="${PWD}/gopath:Godeps/_workspace:${PWD}" godep go build $*
 
 gopath/src/built: gopath gopath/bin/godep
-	PATH="$(PATH):gopath/bin" GOPATH="${PWD}/gopath:${PWD}" godep get $(PACKAGES)
+	PATH="${PATH}:gopath/bin" GOPATH="${PWD}/gopath:${PWD}" godep get $(PACKAGES)
 	touch gopath/src/built
 
 gopath/bin/godep: gopath
