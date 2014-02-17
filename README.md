@@ -1,7 +1,7 @@
 # Gollector Monitors: Third-Party monitoring services/commands.
 
 This repository contains several specialized monitors that don't really make
-sense for [gollector](https://github.com/erikh/gollector) itself. Usage varies
+sense for [gollector](https://github.com/gollector/gollector) itself. Usage varies
 by program, but all return JSON so if you don't want to use gollector, you
 don't have to -- just something that consumes JSON.
 
