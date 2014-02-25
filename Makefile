@@ -10,7 +10,8 @@ MONITORS=\
 				 ping-monitor\
 				 process-monitor\
 				 tcp-monitor\
-				 sysctl-monitor
+				 sysctl-monitor\
+				 http-monitor
 
 all: ${MONITORS}
 
