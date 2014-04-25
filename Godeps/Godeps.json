@@ -10,6 +10,35 @@
 		{
 			"ImportPath": "github.com/vmihailenco/bufio",
 			"Rev": "44bfd372871fc1dde3c2d7f40b355c8cdaf0d23e"
+		},
+		{
+		  "ImportPath": "code.google.com/p/snappy-go/snappy",
+		  "Comment": "null-15",
+		  "Rev": "12e4b4183793ac4b061921e7980845e750679fd0"
+		},
+		{
+		  "ImportPath": "github.com/bitly/go-nsq",
+		  "Comment": "v0.3.5-9-gc79a282",
+		  "Rev": "c79a282f05364e340eadc2ce2f862a3d44eea9c0"
+		},
+		{
+		  "ImportPath": "github.com/bitly/go-simplejson",
+		  "Comment": "v0.4.3-12-g408ce0b",
+		  "Rev": "408ce0b284fa7ad36e3856fcde50022e885474b2"
+		},
+		{
+		  "ImportPath": "github.com/bitly/nsq/util",
+		  "Comment": "v0.2.27-44-gfb54f4c",
+		  "Rev": "fb54f4c268f494c4485e86ff79a24ec1724ca949"
+		},
+		{
+		  "ImportPath": "github.com/bmizerany/perks/quantile",
+		  "Rev": "da72989a59aaaecda7110926d3a6198ee4421c1f"
+		},
+		{
+		  "ImportPath": "github.com/mreiferson/go-snappystream",
+		  "Comment": "v0.1.1",
+		  "Rev": "97c96e6648e99c2ce4fe7d169aa3f7368204e04d"
 		}
 	]
 }
