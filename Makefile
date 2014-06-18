@@ -1,7 +1,7 @@
 PACKAGES=\
 				 github.com/vmihailenco/redis\
 				 github.com/bmizerany/pq\
-				 github.com/rcrowley/go-metrics
+				 github.com/rcrowley/go-metrics\
 
 
 MONITORS=\
@@ -11,7 +11,8 @@ MONITORS=\
 				 process-monitor\
 				 tcp-monitor\
 				 sysctl-monitor\
-				 http-monitor
+				 http-monitor\
+				 nsq-monitor
 
 all: ${MONITORS}
 
