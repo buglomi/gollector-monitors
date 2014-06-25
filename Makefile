@@ -2,6 +2,7 @@ PACKAGES=\
 				 github.com/vmihailenco/redis\
 				 github.com/bmizerany/pq\
 				 github.com/rcrowley/go-metrics\
+				 github.com/bitly/nsq/util/lookupd\
 
 
 MONITORS=\
