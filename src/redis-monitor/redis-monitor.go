@@ -1,84 +1,114 @@
 package main
 
 import (
-	"conversions"
-	"custerr"
 	"encoding/json"
 	"flag"
-	"github.com/vmihailenco/redis"
+	"github.com/go-redis/redis"
 	"net/http"
-	"strings"
+	"os"
+	"regexp"
+	"strconv"
 	"util"
 )
 
-type Attrs struct {
-	Host     string
-	Port     string
-	Password string
-	DBNum    int
+type DBKeyspace struct {
+	Keys    int64
+	Expires int64
 }
 
-func parseInfo(info_string string) map[string]interface{} {
-	info := map[string]interface{}{}
+type RedisStats struct {
+	FreeMemory             int64
+	EvictedKeys            int64
+	InstantaneousOpsPerSec int64
+	ClientConnections      int64
+	DBs                    map[string]*DBKeyspace
+}
 
-	lines := strings.Split(info_string, "\r\n")
+type Addresses struct {
+	Addr     []string
+	Password string
+	DB       int64
+}
 
-	for _, line := range lines {
-		if !strings.HasPrefix(line, "#") && len(strings.Trim(line, " \t")) != 0 {
-			values := strings.SplitN(line, ":", 2)
-			info[values[0]] = values[1]
+func makeClient(address string, password string, db int64) *redis.Client {
+	o := &redis.Options{
+		Addr:     address,
+		Password: password,
+		DB:       db,
+	}
+	client := redis.NewTCPClient(o)
+	return client
+}
+
+func getStats(client *redis.Client) (*RedisStats, error) {
+	info, err := client.Info().Result()
+	if err != nil {
+		return &RedisStats{}, err
+	}
+
+	usedmem_regex, _ := regexp.Compile(`used_memory:(\d+)`)
+	clientconn_regex, _ := regexp.Compile(`connected_clients:(\d+)`)
+	iops_regex, _ := regexp.Compile(`instantaneous_ops_per_sec:(\d+)`)
+	evictedkeys_regex, _ := regexp.Compile(`evicted_keys:(\d+)`)
+	db_regex, _ := regexp.Compile(`(db\d+):keys=(\d+),expires=(\d+)`)
+
+	usedmem, err := strconv.ParseInt(usedmem_regex.FindStringSubmatch(info)[1], 10, 64)
+	maxmem, err := strconv.ParseInt(client.ConfigGet("maxmemory").Val()[1].(string), 10, 64)
+	freemem := maxmem - usedmem
+	evictedkeys, err := strconv.ParseInt(evictedkeys_regex.FindStringSubmatch(info)[1], 10, 64)
+	iops, err := strconv.ParseInt(iops_regex.FindStringSubmatch(info)[1], 10, 64)
+	clientconn, err := strconv.ParseInt(clientconn_regex.FindStringSubmatch(info)[1], 10, 64)
+	dbs := make(map[string]*DBKeyspace)
+	for _, db := range db_regex.FindAllStringSubmatch(info, -1) {
+		keys, _ := strconv.ParseInt(db[2], 10, 64)
+		expires, _ := strconv.ParseInt(db[3], 10, 64)
+		dbs[db[1]] = &DBKeyspace{
+			Keys:    keys,
+			Expires: expires,
 		}
 	}
-
-	return info
+	stats := &RedisStats{
+		FreeMemory:             freemem,
+		EvictedKeys:            evictedkeys,
+		InstantaneousOpsPerSec: iops,
+		ClientConnections:      clientconn,
+		DBs:                    dbs,
+	}
+	err = client.Close()
+	return stats, err
 }
 
-func (a *Attrs) yield() []byte {
-	client := redis.NewTCPClient(a.Host+":"+a.Port, a.Password, int64(a.DBNum))
-	defer client.Close()
-
-	info_string := client.Info()
-
-	if info_string.Err() != nil {
-		return []byte("null")
+func (a *Addresses) yield() []byte {
+	serverInfo := make(map[string]*RedisStats)
+	for _, addr := range a.Addr {
+		client := makeClient(addr, a.Password, a.DB)
+		var stats *RedisStats
+		stats, _ = getStats(client)
+		serverInfo[addr] = stats
 	}
-
-	info := parseInfo(info_string.Val())
-
-	conversions.ConvertTypes(&info)
-	content, err := json.Marshal(info)
-
-	if err != nil {
-		return []byte("null")
-	}
-
+	content, _ := json.Marshal(serverInfo)
 	return content
 }
 
-func (a *Attrs) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (a *Addresses) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	w.Write(a.yield())
 }
 
 func main() {
-	host := flag.String("host", "localhost", "Hostname of redis instance")
-	port := flag.String("port", "6379", "Port of redis instance")
-	password := flag.String("password", "", "Password to connect to redis instance")
-	dbnum := flag.Int("dbnum", -1, "Database number")
+	password := flag.String("password", "", "Password for all redis instances")
+	db := flag.Int("db", 0, "DB number")
 	socket := flag.String("socket", "/tmp/redis-monitor.sock", "Socket to provide metrics over")
-
 	flag.Parse()
-
-	if *host == "" || *port == "" {
-		custerr.Fatal("Please enter a valid host and port\n")
+	if len(flag.Args()) < 1 {
+		flag.Usage()
+		os.Exit(1)
 	}
-
 	s := &http.Server{
-		Handler: &Attrs{
-			Host:     *host,
-			Port:     *port,
+		Handler: &Addresses{
+			Addr:     flag.Args(),
 			Password: *password,
-			DBNum:    *dbnum,
+			DB:       int64(*db),
 		},
 	}
 
