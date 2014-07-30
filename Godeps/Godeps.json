@@ -1,44 +1,47 @@
 {
-	"ImportPath": "_/home/erikh/repos/mine/gollector-monitors",
-	"GoVersion": "go1.2",
-	"Packages": [
-		"github.com/vmihailenco/redis",
-		"github.com/bmizerany/pq",
-		"github.com/rcrowley/go-metrics"
-	],
-	"Deps": [
-		{
-			"ImportPath": "github.com/vmihailenco/bufio",
-			"Rev": "44bfd372871fc1dde3c2d7f40b355c8cdaf0d23e"
-		},
-		{
-		  "ImportPath": "code.google.com/p/snappy-go/snappy",
-		  "Comment": "null-15",
-		  "Rev": "12e4b4183793ac4b061921e7980845e750679fd0"
-		},
-		{
-		  "ImportPath": "github.com/bitly/go-nsq",
-		  "Comment": "v0.3.5-9-gc79a282",
-		  "Rev": "c79a282f05364e340eadc2ce2f862a3d44eea9c0"
-		},
-		{
-		  "ImportPath": "github.com/bitly/go-simplejson",
-		  "Comment": "v0.4.3-12-g408ce0b",
-		  "Rev": "408ce0b284fa7ad36e3856fcde50022e885474b2"
-		},
-		{
-		  "ImportPath": "github.com/bitly/nsq/util",
-		  "Comment": "v0.2.27-44-gfb54f4c",
-		  "Rev": "fb54f4c268f494c4485e86ff79a24ec1724ca949"
-		},
-		{
-		  "ImportPath": "github.com/bmizerany/perks/quantile",
-		  "Rev": "da72989a59aaaecda7110926d3a6198ee4421c1f"
-		},
-		{
-		  "ImportPath": "github.com/mreiferson/go-snappystream",
-		  "Comment": "v0.1.1",
-		  "Rev": "97c96e6648e99c2ce4fe7d169aa3f7368204e04d"
-		}
-	]
+  "ImportPath": "_/home/ryany/gollector-monitors",
+  "GoVersion": "go1.3",
+  "Packages": [
+    "github.com/go-redis/redis",
+    "github.com/bmizerany/pq",
+    "github.com/rcrowley/go-metrics",
+    "github.com/bitly/nsq/util/lookupd",
+    "gopkg.in/check.v1",
+    "gopkg.in/redis.v2"
+  ],
+  "Deps": [
+    {
+      "ImportPath": "code.google.com/p/snappy-go/snappy",
+      "Comment": "null-15",
+      "Rev": "12e4b4183793ac4b061921e7980845e750679fd0"
+    },
+    {
+      "ImportPath": "github.com/bitly/go-nsq",
+      "Comment": "v0.3.7-89-gd346ea3",
+      "Rev": "d346ea3b56aa11a6cb8d1d47a9f0dff5f6df66ba"
+    },
+    {
+      "ImportPath": "github.com/bitly/go-simplejson",
+      "Comment": "v0.4.3-28-g3378bdc",
+      "Rev": "3378bdcb5cebedcbf8b5750edee28010f128fe24"
+    },
+    {
+      "ImportPath": "github.com/bmizerany/perks/quantile",
+      "Rev": "6cb9d9d729303ee2628580d9aec5db968da3a607"
+    },
+    {
+      "ImportPath": "github.com/golang/glog",
+      "Rev": "d1c4472bf2efd3826f2b5bdcc02d8416798d678c"
+    },
+    {
+      "ImportPath": "github.com/mreiferson/go-snappystream",
+      "Comment": "v0.1.1-12-g307a466",
+      "Rev": "307a466b220aaf34bcee2d19c605ed9e96b4bcdb"
+    },
+    {
+      "ImportPath": "gopkg.in/bufio.v1",
+      "Comment": "v1",
+      "Rev": "567b2bfa514e796916c4747494d6ff5132a1dfce"
+    }
+  ]
 }
