@@ -2,7 +2,7 @@ PACKAGES=\
 				 github.com/go-redis/redis\
 				 github.com/bmizerany/pq\
 				 github.com/rcrowley/go-metrics\
-				 github.com/bitly/nsq/...\
+				 github.com/bitly/nsq/util/lookupd\
 				 gopkg.in/check.v1\
 				 gopkg.in/redis.v2\
 
