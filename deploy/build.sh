@@ -2,7 +2,7 @@
 
 BUILD_DIRS=`go list -f '{{if eq .Name "main"}}{{.ImportPath}}{{end}}' ./src/... | awk '{ print substr($1, 41) }'`
 
-subdirs=$BUIL$D_DIRS
+subdirs=$BUILD_DIRS
 
 cmd_prefix=""
 if [ "$#" -ge 1 ] && [ "$1" == "godep" ]; then
