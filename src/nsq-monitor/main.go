@@ -5,9 +5,9 @@ import (
 	"flag"
 	"fmt"
 	"github.com/bitly/nsq/util/lookupd"
+	"github.com/gollector/gollector-monitors/src/util"
 	"net/http"
 	"os"
-	"util"
 )
 
 type NSQHandler struct {

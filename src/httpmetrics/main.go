@@ -2,9 +2,9 @@ package httpmetrics
 
 import (
 	"encoding/json"
+	"github.com/gollector/gollector-monitors/src/util"
 	metrics "github.com/rcrowley/go-metrics"
 	"net/http"
-	"util"
 )
 
 type Handler struct {

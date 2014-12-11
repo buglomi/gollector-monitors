@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"flag"
 	"github.com/go-redis/redis"
+	"github.com/gollector/gollector-monitors/src/util"
 	"net/http"
 	"os"
 	"regexp"
 	"strconv"
-	"util"
 )
 
 type DBKeyspace struct {
@@ -85,6 +85,7 @@ func (a *Addresses) yield() []byte {
 		var stats *RedisStats
 		stats, _ = getStats(client)
 		serverInfo[addr] = stats
+		defer client.Close()
 	}
 	content, _ := json.Marshal(serverInfo)
 	return content

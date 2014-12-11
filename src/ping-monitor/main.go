@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
+	"github.com/gollector/gollector-monitors/src/httpmetrics"
 	metrics "github.com/rcrowley/go-metrics"
-	"httpmetrics"
 	"os"
 )
 

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/gollector/gollector-monitors/src/util"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -12,7 +13,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"util"
 )
 
 var registry = map[string]float64{}

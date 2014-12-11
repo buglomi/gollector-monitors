@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/gollector/gollector-monitors/src/util"
 	"net/http"
 	"os"
-	"util"
 )
 
 type PMHandler struct {

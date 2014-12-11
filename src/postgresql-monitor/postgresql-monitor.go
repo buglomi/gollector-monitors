@@ -1,14 +1,14 @@
 package main
 
 import (
-	"custerr"
 	"database/sql"
 	"encoding/json"
 	"flag"
 	_ "github.com/bmizerany/pq"
+	"github.com/gollector/gollector-monitors/src/custerr"
+	"github.com/gollector/gollector-monitors/src/util"
 	"net/http"
 	"strings"
-	"util"
 )
 
 type Attrs struct {

@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/gollector/gollector-monitors/src/httpmetrics"
 	metrics "github.com/rcrowley/go-metrics"
-	"httpmetrics"
 	"net"
 	"os"
 	"time"
