@@ -3,13 +3,18 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"github.com/go-redis/redis"
+	"fmt"
+	"github.com/davecheney/profile"
+	"github.com/fzzy/radix/redis"
 	"github.com/gollector/gollector-monitors/src/util"
+	"log"
 	"net/http"
 	"os"
 	"regexp"
 	"strconv"
+	"time"
 )
+import _ "net/http/pprof"
 
 type DBKeyspace struct {
 	Keys    int64
@@ -30,21 +35,31 @@ type Addresses struct {
 	DB       int64
 }
 
-func makeClient(address string, password string, db int64) *redis.Client {
-	o := &redis.Options{
-		Addr:     address,
-		Password: password,
-		DB:       db,
+func errHndlr(err error) {
+	if err != nil {
+		fmt.Println("error:", err)
+		os.Exit(1)
 	}
-	client := redis.NewTCPClient(o)
+}
+
+func makeClient(address string, password string, db int64) *redis.Client {
+	client, err := redis.DialTimeout("tcp", address, time.Duration(10)*time.Second)
+	errHndlr(err)
+	if password != "" {
+		r := client.Cmd("AUTH", password)
+		errHndlr(r.Err)
+	}
+	r := client.Cmd("SELECT", db)
+	errHndlr(r.Err)
 	return client
 }
 
 func getStats(client *redis.Client) (*RedisStats, error) {
-	info, err := client.Info().Result()
-	if err != nil {
-		return &RedisStats{}, err
-	}
+	info, err := client.Cmd("INFO").Str()
+	errHndlr(err)
+
+  maxmem_slice, err := client.Cmd("CONFIG", "GET", "maxmemory").List()
+	errHndlr(err)
 
 	usedmem_regex, _ := regexp.Compile(`used_memory:(\d+)`)
 	clientconn_regex, _ := regexp.Compile(`connected_clients:(\d+)`)
@@ -53,7 +68,7 @@ func getStats(client *redis.Client) (*RedisStats, error) {
 	db_regex, _ := regexp.Compile(`(db\d+):keys=(\d+),expires=(\d+)`)
 
 	usedmem, err := strconv.ParseInt(usedmem_regex.FindStringSubmatch(info)[1], 10, 64)
-	maxmem, err := strconv.ParseInt(client.ConfigGet("maxmemory").Val()[1].(string), 10, 64)
+	maxmem, err := strconv.ParseInt(maxmem_slice[len(maxmem_slice)-1], 10, 64)
 	freemem := maxmem - usedmem
 	evictedkeys, err := strconv.ParseInt(evictedkeys_regex.FindStringSubmatch(info)[1], 10, 64)
 	iops, err := strconv.ParseInt(iops_regex.FindStringSubmatch(info)[1], 10, 64)
@@ -74,7 +89,6 @@ func getStats(client *redis.Client) (*RedisStats, error) {
 		ClientConnections:      clientconn,
 		DBs:                    dbs,
 	}
-	err = client.Close()
 	return stats, err
 }
 
@@ -82,10 +96,12 @@ func (a *Addresses) yield() []byte {
 	serverInfo := make(map[string]*RedisStats)
 	for _, addr := range a.Addr {
 		client := makeClient(addr, a.Password, a.DB)
-		var stats *RedisStats
-		stats, _ = getStats(client)
-		serverInfo[addr] = stats
 		defer client.Close()
+		stats, err := getStats(client)
+		if err != nil {
+			panic(err)
+		}
+		serverInfo[addr] = stats
 	}
 	content, _ := json.Marshal(serverInfo)
 	return content
@@ -114,6 +130,12 @@ func main() {
 	}
 
 	l, err := util.CreateSocket(*socket)
+
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
+
+	defer profile.Start(profile.MemProfile).Stop()
 
 	if err != nil {
 		panic(err)

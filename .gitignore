@@ -10,3 +10,4 @@ src/nsq-monitor/nsq-monitor
 src/gollector-monitors.tar.gz
 Godeps/_workspace
 deploy/package.sh
+*.deb
